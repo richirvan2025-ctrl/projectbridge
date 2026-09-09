@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { signUpAction, PRODI_OPTIONS } from "../actions";
+import { signUpAction } from "../actions";
+import { PRODI_OPTIONS } from "../prodi-options";
 
 function SubmitButton() {
   const { pending } = useFormStatus();

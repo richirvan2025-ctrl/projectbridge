@@ -3,16 +3,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-// Daftar prodi yang tersedia (sesuai PRD: DKV, Bisnis Digital, dll).
-// Disimpan di sini (bukan di DB) karena nilainya konstan untuk MVP.
-export const PRODI_OPTIONS = [
-  "DKV (Desain Komunikasi Visual)",
-  "Bisnis Digital",
-  "Desain Interior",
-  "Desain Mode",
-  "Arsitektur",
-] as const;
-
 type ActionResult = { error: string } | undefined;
 
 /**
