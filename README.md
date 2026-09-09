@@ -4,15 +4,25 @@ Marketplace internal kampus IDB Bali — mempertemukan mahasiswa dengan UMKM/stu
 kreatif lokal untuk proyek riil yang fleksibel dan bisa dikonversi SKS.
 Lihat `ProjectBridge_PRD.md` untuk PRD lengkap.
 
-## Status: Milestone 1 — Setup + deploy kosong
+## Status
+
+### Milestone 1 — Setup + deploy kosong ✅
 
 - [x] Scaffold Next.js 14 (App Router, TypeScript, Tailwind)
 - [x] Client Supabase (browser, server, middleware refresh sesi)
 - [x] Landing page + `GET /api/health`
-- [x] Skema SQL awal di `supabase/schema.sql` (dipakai di Milestone 2)
-- [ ] `npm install && npm run dev` di laptop (sandbox AI memblokir npm registry)
-- [ ] Isi `.env.local` dengan kredensial Supabase asli
-- [ ] Deploy kosong ke Vercel
+- [x] Skema SQL awal di `supabase/schema.sql` (extended di Milestone 2)
+- [x] Deploy kosong ke Vercel
+
+### Milestone 2 — Autentikasi + database ✅
+
+- [x] Halaman `/login` dan `/signup` (multi-step: pilih peran → form kondisional)
+- [x] Server Actions `signIn`, `signUp`, `signOut`
+- [x] Trigger `handle_new_user()` — profil di `public.users` dibuat otomatis dari `raw_user_meta_data`
+- [x] RLS policies per peran (mahasiswa/mitra) di 4 tabel
+- [x] Middleware proteksi `/dashboard` (wajib partner) dan `/student` (wajib student)
+- [x] `SiteHeader` global dengan tombol Masuk/Daftar + sapaan + sign-out
+- [ ] Uji alur signup/login di localhost (lihat langkah di bawah)
 
 ## Cara menjalankan (di laptop Anda)
 
@@ -36,26 +46,53 @@ Cek kesehatan: buka `http://localhost:3000/api/health` — harus mengembalikan
 4. Restart `npm run dev` — badge di landing page berubah jadi
    "Supabase terhubung".
 
-## Deploy kosong ke Vercel (menutup Milestone 1)
+## Setup database (Milestone 2)
 
-1. Push folder ini ke GitHub (repo baru, mis. `projectbridge`).
-2. Di https://vercel.com/new — **Add New Project > Import** repo tersebut
-   (Framework Preset otomatis terdeteksi Next.js).
-3. Tambahkan Environment Variables:
-   `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-4. **Deploy** — pastikan URL produksi membuka landing page tanpa error.
-   Pipeline sudah jalan: setiap push ke `main` auto-deploy.
+1. Buka **SQL Editor** di Supabase Dashboard.
+2. Tempel seluruh isi `supabase/schema.sql` (sekarang sudah berisi trigger +
+   RLS policies).
+3. Klik **Run**. Tidak ada output error → schema siap.
+4. **Authentication > Providers > Email**: matikan toggle **Confirm email**
+   (agar signup langsung aktif untuk demo lokal tanpa SMTP).
+
+## Uji alur Milestone 2
+
+1. Buka `http://localhost:3000` — badge harus "Supabase terhubung", tombol
+   Masuk/Daftar muncul di header.
+2. **Signup mahasiswa**: klik Daftar → pilih "Mahasiswa" → isi nama, email
+   baru, password, prodi → submit. Otomatis masuk ke `/student`.
+3. **Cek di Dashboard Supabase > Table Editor > `users`**: baris baru
+   muncul dengan `role='student'`, `prodi` benar.
+4. **Sign out** (tombol "Keluar" di header), lalu ulangi signup sebagai
+   Mitra. Otomatis masuk ke `/dashboard`.
+5. **Tes proteksi**: sign out → akses `/dashboard` → harus redirect ke
+   `/login`. Login sebagai mahasiswa → akses `/dashboard` → harus redirect
+   ke `/student`.
 
 ## Struktur
 
 ```
-app/                  # App Router: layout, landing page, /api/health
-lib/supabase/         # client.ts (browser), server.ts, middleware.ts
-middleware.ts         # refresh sesi Supabase tiap request
-supabase/schema.sql   # skema users/projects/applications/ratings (Milestone 2)
+app/                          # App Router
+  (auth)/                     # route group untuk halaman auth (tidak ada di URL)
+    actions.ts                # Server Actions signIn/signUp/signOut
+    login/                    # /login
+    signup/                   # /signup
+  api/health/                 # GET /api/health
+  dashboard/page.tsx          # /dashboard (mitra, role-protected)
+  student/page.tsx            # /student (mahasiswa, role-protected)
+  layout.tsx                  # root layout + SiteHeader
+  page.tsx                    # landing page
+components/
+  site-header.tsx             # header global (logo, login/dashboard/sign-out)
+lib/supabase/
+  client.ts                   # browser client
+  server.ts                   # server client (cookies)
+  middleware.ts               # session refresh + route protection
+middleware.ts                 # jalankan updateSession di setiap request
+supabase/schema.sql           # 4 tabel + trigger + RLS policies
 ```
 
-## Milestone berikutnya (Milestone 2)
+## Milestone berikutnya (Milestone 3)
 
-Autentikasi + skema database: halaman login mahasiswa/mitra, jalankan
-`supabase/schema.sql` di SQL Editor, lalu kebijakan RLS per peran.
+Posting proyek (sisi mitra) + listing proyek dengan filter prodi (sisi
+mahasiswa). Schema sudah siap — tinggal pakai.

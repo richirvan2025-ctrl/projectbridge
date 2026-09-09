@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
 const milestones = [
-  { n: "1", title: "Setup & deploy kosong", desc: "Next.js + Supabase + pipeline Vercel jalan", active: true },
-  { n: "2", title: "Autentikasi + database", desc: "Login mahasiswa/mitra + skema users, projects, applications, ratings" },
+  { n: "1", title: "Setup & deploy kosong", desc: "Next.js + Supabase + pipeline Vercel jalan", status: "done" },
+  { n: "2", title: "Autentikasi + database", desc: "Login mahasiswa/mitra + skema users, projects, applications, ratings + RLS", status: "active" },
   { n: "3", title: "Posting + listing proyek", desc: "Form mitra + daftar proyek dengan filter prodi" },
   { n: "4", title: "Detail + apply + upload", desc: "Form lamaran + upload portofolio (maks 3 file)" },
   { n: "5", title: "Dashboard mitra", desc: "Daftar pelamar + tandai proyek selesai" },
@@ -16,10 +17,31 @@ const roles = [
   { emoji: "🏅", title: "Sertifikat SKS", desc: "Proyek yang memenuhi syarat bisa diajukan untuk konversi SKS, lengkap dengan rating dua arah." },
 ];
 
-export default function Home() {
+export default async function Home() {
   const supabaseConfigured =
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder");
+
+  // Personalisasi hero kalau user login. Gagal silencieux.
+  let loggedIn: { name: string; role: "student" | "partner" } | null = null;
+  try {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("users")
+        .select("name, role")
+        .eq("id", user.id)
+        .single<{ name: string; role: "student" | "partner" }>();
+      if (profile?.name && profile?.role) {
+        loggedIn = { name: profile.name, role: profile.role };
+      }
+    }
+  } catch {
+    // placeholder env => anggap belum login
+  }
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
@@ -31,18 +53,36 @@ export default function Home() {
         <h1 className="text-4xl font-extrabold leading-tight md:text-5xl">
           ProjectBridge
         </h1>
-        <p className="mt-4 max-w-2xl text-lg text-white/90">
-          Marketplace internal kampus yang mempertemukan mahasiswa dengan UMKM
-          dan studio kreatif lokal untuk mengerjakan proyek riil — fleksibel,
-          dan bisa dikonversi SKS.
-        </p>
+        {loggedIn ? (
+          <p className="mt-4 max-w-2xl text-lg text-white/90">
+            Halo, <strong>{loggedIn.name}</strong> — siap{" "}
+            {loggedIn.role === "partner"
+              ? "merekrut mahasiswa untuk proyek Anda."
+              : "menemukan proyek yang cocok untuk prodi Anda."}
+          </p>
+        ) : (
+          <p className="mt-4 max-w-2xl text-lg text-white/90">
+            Marketplace internal kampus yang mempertemukan mahasiswa dengan UMKM
+            dan studio kreatif lokal untuk mengerjakan proyek riil — fleksibel,
+            dan bisa dikonversi SKS.
+          </p>
+        )}
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            href="/api/health"
-            className="rounded-full bg-white px-6 py-3 font-semibold text-indigo-700 shadow hover:bg-indigo-50"
-          >
-            Cek Status API
-          </Link>
+          {loggedIn ? (
+            <Link
+              href={loggedIn.role === "partner" ? "/dashboard" : "/student"}
+              className="rounded-full bg-white px-6 py-3 font-semibold text-indigo-700 shadow hover:bg-indigo-50"
+            >
+              Buka Dashboard
+            </Link>
+          ) : (
+            <Link
+              href="/signup"
+              className="rounded-full bg-white px-6 py-3 font-semibold text-indigo-700 shadow hover:bg-indigo-50"
+            >
+              Daftar Sekarang
+            </Link>
+          )}
           <span
             className={`inline-flex items-center gap-2 rounded-full px-6 py-3 font-semibold ${
               supabaseConfigured
@@ -82,39 +122,49 @@ export default function Home() {
       <section className="mt-12 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
         <h2 className="text-xl font-bold">Peta Milestone (sesuai PRD)</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Milestone 1 aktif — fondasi Next.js + Supabase + pipeline deploy.
+          Milestone 2 aktif — autentikasi + RLS siap dipakai.
         </p>
         <ol className="mt-6 space-y-4">
-          {milestones.map((m) => (
-            <li key={m.n} className="flex gap-4">
-              <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                  m.active
-                    ? "bg-indigo-600 text-white"
-                    : "bg-slate-100 text-slate-500"
-                }`}
-              >
-                {m.n}
-              </span>
-              <div>
-                <p className="font-semibold">
-                  {m.title}
-                  {m.active && (
-                    <span className="ml-2 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-bold text-indigo-700">
-                      AKTIF
-                    </span>
-                  )}
-                </p>
-                <p className="text-sm text-slate-500">{m.desc}</p>
-              </div>
-            </li>
-          ))}
+          {milestones.map((m) => {
+            const isDone = m.status === "done";
+            const isActive = m.status === "active";
+            return (
+              <li key={m.n} className="flex gap-4">
+                <span
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                    isActive
+                      ? "bg-indigo-600 text-white"
+                      : isDone
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {isDone ? "✓" : m.n}
+                </span>
+                <div>
+                  <p className="font-semibold">
+                    {m.title}
+                    {isActive && (
+                      <span className="ml-2 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-bold text-indigo-700">
+                        AKTIF
+                      </span>
+                    )}
+                    {isDone && (
+                      <span className="ml-2 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                        SELESAI
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-sm text-slate-500">{m.desc}</p>
+                </div>
+              </li>
+            );
+          })}
         </ol>
       </section>
 
       <footer className="mt-10 text-center text-sm text-slate-400">
-        ProjectBridge · Milestone 1 — Next.js (App Router) + Supabase + Tailwind
-        · Deploy via Vercel
+        ProjectBridge · Milestone 2 — Autentikasi + Skema Database
       </footer>
     </main>
   );
