@@ -296,3 +296,132 @@ export async function updateProjectStatusAction(
   revalidatePath(`/projects`);
   redirect(`/dashboard/projects/${projectId}?updated=1`);
 }
+
+/**
+ * Milestone 6 — Rating dua arah setelah proyek ditandai selesai.
+ * Mitra menilai mahasiswa yang lamarannya diterima; mahasiswa yang diterima
+ * menilai mitra. RLS "ratings_insert_own" tetap benteng terakhir
+ * (from_user_id = auth.uid()).
+ */
+export async function submitRatingAction(
+  formData: FormData
+): Promise<ProjectActionResult> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?error=Silakan masuk terlebih dahulu.");
+  }
+
+  const projectId = String(formData.get("project_id") ?? "").trim();
+  const toUserId = String(formData.get("to_user_id") ?? "").trim();
+  const stars = Number(formData.get("stars"));
+  const comment = String(formData.get("comment") ?? "").trim();
+
+  if (!projectId || !toUserId) {
+    return { error: "Data rating tidak valid." };
+  }
+  if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
+    return { error: "Pilih rating 1–5 bintang." };
+  }
+  if (comment.length > 300) {
+    return { error: "Komentar maksimal 300 karakter." };
+  }
+
+  // Proyek harus sudah selesai
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, status, partner_id")
+    .eq("id", projectId)
+    .single();
+
+  if (!project) {
+    return { error: "Proyek tidak ditemukan." };
+  }
+  if (project.status !== "completed") {
+    return {
+      error: "Rating hanya bisa dikirim setelah proyek ditandai selesai.",
+    };
+  }
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "student" && profile?.role !== "partner") {
+    return { error: "Peran tidak valid." };
+  }
+
+  if (profile.role === "partner") {
+    // Mitra: hanya pemilik proyek, menilai pelamar dengan status diterima
+    if (project.partner_id !== user.id) {
+      return { error: "Hanya pemilik proyek yang bisa menilai." };
+    }
+    if (toUserId === user.id) {
+      return { error: "Tidak bisa menilai diri sendiri." };
+    }
+    const { data: acceptedApp } = await supabase
+      .from("applications")
+      .select("id")
+      .eq("project_id", projectId)
+      .eq("student_id", toUserId)
+      .eq("status", "accepted")
+      .maybeSingle();
+    if (!acceptedApp) {
+      return {
+        error: "Mahasiswa ini tidak punya lamaran diterima di proyek ini.",
+      };
+    }
+  } else {
+    // Mahasiswa: hanya pelamar diterima, dan menilai mitra pemilik proyek
+    if (toUserId !== project.partner_id) {
+      return { error: "Rating hanya untuk mitra pemilik proyek ini." };
+    }
+    const { data: myApp } = await supabase
+      .from("applications")
+      .select("id")
+      .eq("project_id", projectId)
+      .eq("student_id", user.id)
+      .eq("status", "accepted")
+      .maybeSingle();
+    if (!myApp) {
+      return { error: "Hanya pelamar yang diterima bisa menilai mitra." };
+    }
+  }
+
+  // Cegah rating ganda (juga dijaga unique index di database)
+  const { data: existingRating } = await supabase
+    .from("ratings")
+    .select("id")
+    .eq("project_id", projectId)
+    .eq("from_user_id", user.id)
+    .maybeSingle();
+
+  if (existingRating) {
+    return { error: "Anda sudah memberi rating untuk proyek ini." };
+  }
+
+  const { error } = await supabase.from("ratings").insert({
+    project_id: projectId,
+    from_user_id: user.id,
+    to_user_id: toUserId,
+    stars,
+    comment: comment || null,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/dashboard/projects/${projectId}`);
+  redirect(
+    profile.role === "partner"
+      ? `/dashboard/projects/${projectId}?rated=1`
+      : `/projects/${projectId}?rated=1`
+  );
+}

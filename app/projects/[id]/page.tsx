@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ApplyForm } from "./apply-form";
+import { RatingForm } from "../rating-form";
+import { CertificateCard } from "../certificate-card";
 
 export const metadata = { title: "Detail Proyek — ProjectBridge" };
 
@@ -63,7 +65,7 @@ export default async function ProjectDetailPage({
 
   const { data: profile } = await supabase
     .from("users")
-    .select("role")
+    .select("role, name")
     .eq("id", user.id)
     .single();
 
@@ -72,8 +74,9 @@ export default async function ProjectDetailPage({
   const isOwner = project.partner_id === user.id;
   const partnerName = getPartnerBusinessName(project.partner);
 
-  // Kalau student: cek apakah sudah melamar proyek ini
+  // Kalau student: cek apakah sudah melamar proyek ini (sekalian statusnya)
   let hasApplied = false;
+  let applicationStatus: string | null = null;
   if (isStudent) {
     const { data: application } = await supabase
       .from("applications")
@@ -82,10 +85,41 @@ export default async function ProjectDetailPage({
       .eq("student_id", user.id)
       .maybeSingle();
     hasApplied = !!application;
+    applicationStatus = application?.status ?? null;
+  }
+
+  // Milestone 6: rating dua arah + sertifikat (hanya proyek selesai + diterima)
+  const isCompleted = project.status === "completed";
+  const isAcceptedStudent = isStudent && applicationStatus === "accepted";
+  let myRating: { stars: number; comment: string | null } | null = null;
+  let ratingFromPartner: { stars: number; comment: string | null } | null =
+    null;
+  if (isAcceptedStudent && isCompleted) {
+    const { data: sent } = await supabase
+      .from("ratings")
+      .select("stars, comment")
+      .eq("project_id", params.id)
+      .eq("from_user_id", user.id)
+      .maybeSingle();
+    myRating = sent;
+    const { data: received } = await supabase
+      .from("ratings")
+      .select("stars, comment")
+      .eq("project_id", params.id)
+      .eq("from_user_id", project.partner_id)
+      .eq("to_user_id", user.id)
+      .maybeSingle();
+    ratingFromPartner = received;
   }
 
   const justApplied = searchParams.get("applied") === "1";
+  const justRated = searchParams.get("rated") === "1";
   const badge = STATUS_LABEL[project.status] ?? STATUS_LABEL.open;
+  const issuedAt = new Date().toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
@@ -129,6 +163,86 @@ export default async function ProjectDetailPage({
             </Link>
           </div>
         </section>
+      ) : isAcceptedStudent && isCompleted ? (
+        <>
+          <section className="mt-6 rounded-2xl border border-indigo-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-slate-900">
+              Sertifikat digital 🏅
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Isi jam kerja secara manual, lalu ambil tangkapan layar kartu ini
+              sebagai sertifikat.
+            </p>
+            <div className="mt-4">
+              <CertificateCard
+                studentName={profile?.name ?? "Mahasiswa"}
+                projectTitle={project.title}
+                partnerName={partnerName ?? "Mitra ProjectBridge"}
+                ratingStars={ratingFromPartner?.stars ?? null}
+                ratingComment={ratingFromPartner?.comment ?? null}
+                issuedAt={issuedAt}
+              />
+            </div>
+          </section>
+
+          <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-slate-900">
+              Rating dua arah
+            </h2>
+            {justRated && (
+              <p
+                role="status"
+                className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
+              >
+                Rating berhasil terkirim 🎉
+              </p>
+            )}
+            <div className="mt-4 grid gap-6 md:grid-cols-2">
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-700">
+                  Rating Anda untuk mitra
+                </p>
+                {myRating ? (
+                  <p className="mt-2 text-sm text-slate-600">
+                    <span className="text-amber-400">
+                      {"★".repeat(myRating.stars)}
+                      {"☆".repeat(5 - myRating.stars)}
+                    </span>
+                    {myRating.comment && <em> “{myRating.comment}”</em>}
+                  </p>
+                ) : (
+                  <div className="mt-2">
+                    <RatingForm
+                      projectId={project.id}
+                      toUserId={project.partner_id}
+                      targetLabel={partnerName ?? "Mitra"}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-700">
+                  Rating dari mitra
+                </p>
+                {ratingFromPartner ? (
+                  <p className="mt-2 text-sm text-slate-600">
+                    <span className="text-amber-400">
+                      {"★".repeat(ratingFromPartner.stars)}
+                      {"☆".repeat(5 - ratingFromPartner.stars)}
+                    </span>
+                    {ratingFromPartner.comment && (
+                      <em> “{ratingFromPartner.comment}”</em>
+                    )}
+                  </p>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-500">
+                    Mitra belum memberi rating untuk Anda.
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        </>
       ) : !isOpen ? (
         <section className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6">
           <p className="font-semibold text-slate-700">
@@ -150,8 +264,8 @@ export default async function ProjectDetailPage({
             🎉 Anda sudah melamar proyek ini.
           </p>
           <p className="mt-1 text-sm text-emerald-700">
-            Status lamaran Anda bisa dilihat di Milestone 5 ketika mitra tinjau
-            pelamar.
+            Mitra akan meninjau lamaran Anda — hasilnya (diterima/ditolak)
+            akan tampil di halaman ini.
           </p>
         </section>
       ) : (
@@ -166,7 +280,7 @@ export default async function ProjectDetailPage({
               role="status"
               className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
             >
-              Lamaran berhasil disend 🎉
+              Lamaran berhasil terkirim 🎉
             </p>
           )}
           <div className="mt-4">

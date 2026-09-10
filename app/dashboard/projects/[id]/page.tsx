@@ -5,6 +5,7 @@ import {
   updateApplicationStatusAction,
   updateProjectStatusAction,
 } from "@/app/projects/actions";
+import { RatingForm } from "@/app/projects/rating-form";
 
 export const metadata = { title: "Kelola Proyek — ProjectBridge" };
 
@@ -34,6 +35,7 @@ function formatDate(iso: string) {
 
 // PostgREST mengembalikan relasi to-many sebagai array; normalisasi di sini.
 function getStudent(student: unknown): {
+  id?: string;
   name?: string;
   email?: string;
   prodi?: string;
@@ -42,6 +44,7 @@ function getStudent(student: unknown): {
   const s = Array.isArray(student) ? student[0] : student;
   if (!s || typeof s !== "object") return null;
   return {
+    id: (s as { id?: unknown }).id as string | undefined,
     name: (s as { name?: unknown }).name as string | undefined,
     email: (s as { email?: unknown }).email as string | undefined,
     prodi: (s as { prodi?: unknown }).prodi as string | undefined,
@@ -94,7 +97,27 @@ export default async function DashboardProjectDetailPage({
   const countRejected = applications.filter((a) => a.status === "rejected").length;
   const justUpdated = searchParams.get("updated") === "1";
   const hasError = searchParams.get("error") === "1";
+  const justRated = searchParams.get("rated") === "1";
   const badge = STATUS_LABEL[project.status] ?? STATUS_LABEL.open;
+
+  // Milestone 6: rating yang sudah dikirim mitra (per mahasiswa)
+  const ratingsByStudent: Record<
+    string,
+    { stars: number; comment: string | null }
+  > = {};
+  if (project.status === "completed") {
+    const { data: myRatings } = await supabase
+      .from("ratings")
+      .select("to_user_id, stars, comment")
+      .eq("project_id", params.id)
+      .eq("from_user_id", user.id);
+    (myRatings ?? []).forEach((r) => {
+      ratingsByStudent[r.to_user_id] = {
+        stars: r.stars,
+        comment: r.comment ?? null,
+      };
+    });
+  }
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
@@ -125,6 +148,15 @@ export default async function DashboardProjectDetailPage({
           className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
         >
           Perubahan berhasil disimpan ✅
+        </p>
+      )}
+
+      {justRated && (
+        <p
+          role="status"
+          className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
+        >
+          Rating berhasil terkirim 🎉
         </p>
       )}
 
@@ -277,7 +309,35 @@ export default async function DashboardProjectDetailPage({
                     </ul>
                   </div>
                 )}
-{a.status === "pending" && (
+
+                {project.status === "completed" &&
+                  a.status === "accepted" &&
+                  student?.id && (
+                    <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                      {ratingsByStudent[student.id] ? (
+                        <p className="text-sm text-amber-800">
+                          Anda menilai:{" "}
+                          <span className="text-amber-500">
+                            {"★".repeat(ratingsByStudent[student.id].stars)}
+                            {"☆".repeat(
+                              5 - ratingsByStudent[student.id].stars
+                            )}
+                          </span>
+                          {ratingsByStudent[student.id].comment && (
+                            <em> “{ratingsByStudent[student.id].comment}”</em>
+                          )}
+                        </p>
+                      ) : (
+                        <RatingForm
+                          projectId={project.id}
+                          toUserId={student.id}
+                          targetLabel={student.name ?? "mahasiswa"}
+                        />
+                      )}
+                    </div>
+                  )}
+
+                {a.status === "pending" && (
                   <div className="mt-4 flex flex-wrap gap-3">
                     <form action={updateApplicationStatusAction}>
                       <input

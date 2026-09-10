@@ -1,4 +1,4 @@
--- ProjectBridge — skema database MVP (Milestone 5)
+-- ProjectBridge — skema database MVP (Milestone 6)
 -- Jalankan di Supabase Dashboard > SQL Editor (tempel seluruh file, lalu Run).
 -- Sesuai PRD §7: users, projects, applications, ratings.
 
@@ -246,3 +246,15 @@ drop policy if exists "portfolio_files_select" on storage.objects;
 create policy "portfolio_files_select"
   on storage.objects for select
   using (bucket_id = 'portfolios');
+
+
+-- =============================================================================
+-- MILESTONE 6: Rating dua arah + sertifikat
+-- Jalankan berulang: aman (idempotent).
+-- =============================================================================
+
+-- 10) Satu pengguna hanya boleh memberi satu rating per proyek.
+--     Rating dua arah tetap bisa: mitra→mahasiswa dan mahasiswa→mitra
+--     adalah dua baris berbeda (from_user_id berbeda).
+create unique index if not exists "ratings_project_from_unique"
+  on public.ratings (project_id, from_user_id);

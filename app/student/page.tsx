@@ -54,6 +54,27 @@ export default async function StudentPage() {
     .order("created_at", { ascending: false })
     .limit(5);
 
+  // Milestone 6: proyek selesai yang lamarannya diterima → sertifikat siap
+  const { data: acceptedApps } = await supabase
+    .from("applications")
+    .select("id, project:projects(id, title, status, prodi_target)")
+    .eq("student_id", user.id)
+    .eq("status", "accepted");
+
+  const doneProjects = (acceptedApps ?? [])
+    .map((a) => {
+      const p = Array.isArray(a.project) ? a.project[0] : a.project;
+      return p as
+        | { id: string; title: string; status: string; prodi_target: string }
+        | null;
+    })
+    .filter(
+      (
+        p
+      ): p is { id: string; title: string; status: string; prodi_target: string } =>
+        p !== null && p.status === "completed"
+    );
+
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
       <header className="rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500 p-10 text-white shadow-xl">
@@ -134,9 +155,39 @@ export default async function StudentPage() {
         )}
       </section>
 
+      {doneProjects.length > 0 && (
+        <section className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+          <h2 className="text-xl font-bold text-emerald-900">
+            Proyek selesai — sertifikat siap 🏅
+          </h2>
+          <p className="mt-1 text-sm text-emerald-700">
+            Beri rating ke mitra dan ambil sertifikat digital Anda.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {doneProjects.map((p) => (
+              <li
+                key={p.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4 shadow-sm"
+              >
+                <div>
+                  <p className="font-semibold text-slate-900">{p.title}</p>
+                  <p className="text-xs text-slate-500">{p.prodi_target}</p>
+                </div>
+                <Link
+                  href={`/projects/${p.id}`}
+                  className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                >
+                  Lihat sertifikat &amp; rating →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <p className="mt-6 text-sm text-slate-500">
-        🤝 Buka detail proyek untuk dilihat deskripsi lengkap dan send lamaran
-        dengan portofolio (maks 3 file).
+        🤝 Buka detail proyek untuk melihat deskripsi lengkap dan mengirim
+        lamaran dengan portofolio (maks 3 file).
       </p>
     </main>
   );

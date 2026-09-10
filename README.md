@@ -43,15 +43,30 @@ Lihat `ProjectBridge_PRD.md` untuk PRD lengkap.
 - [x] Storage bucket `portfolios` (publik) + RLS policies di `supabase/schema.sql`
 - [ ] Uji alur lamaran di localhost (upload portofolio dummy → cek storage + `applications`)
 
-### Milestone 5 — Dashboard mitra 🚧
+### Milestone 5 — Dashboard mitra ✅
 
-- [x] Halaman `/dashboard/projects/[id]` — daftar pelamar per proyek (nome, prodi,
-  email, alasan, portofolio, status, data)
+- [x] Halaman `/dashboard/projects/[id]` — daftar pelamar per proyek (nama, prodi,
+  email, alasan, portofolio, status, tanggal)
 - [x] Server Action `updateApplicationStatusAction` — mitra diterima/tolak lamaran
 - [x] Server Action `updateProjectStatusAction` — tandai proyek berjalan/selesai/buka kembali
 - [x] Dashboard mitra menampilkan jumlah pelamar per proyek + link "tinjau lamaran"
 - [x] Detail proyek (publik) menampilkan tombol "Kelola pelamar" bagi pemilik proyek
 - [ ] Uji alur lamaran tetap (lamar → mitra diterima/tolak → tandai selesai)
+
+### Milestone 6 — Rating dua arah + sertifikat digital 🚧
+
+- [x] Server Action `submitRatingAction` — bintang 1–5 + komentar, hanya setelah
+  proyek ditandai selesai
+- [x] Dua arah: mitra menilai setiap pelamar berstatus diterima; mahasiswa yang
+  diterima menilai mitra
+- [x] Anti rating ganda — pengecekan kode + unique index
+  `ratings_project_from_unique` di `supabase/schema.sql`
+- [x] Form rating bintang interaktif (`rating-form.tsx`) di dashboard mitra &
+  detail proyek
+- [x] Kartu sertifikat digital (`certificate-card.tsx`) — nama mahasiswa, judul
+  proyek, mitra, jam kerja input manual, rating mitra — siap screenshot
+- [x] Dashboard mahasiswa: section "Proyek selesai" dengan link sertifikat
+- [ ] Uji alur rating + sertifikat di localhost
 
 ## Cara menjalankan (di laptop Anda)
 
@@ -144,6 +159,26 @@ Cek kesehatan: buka `http://localhost:3000/api/health` — harus mengembalikan
 5. **Tes proteksi**: login sebagai mahasiswa → buka `/dashboard/projects/[id]` →
    redirect ke `/dashboard`→`/student` (middleware role).
 
+## Uji alur Milestone 6
+
+1. Jalankan ulang `supabase/schema.sql` di SQL Editor (membuat unique index
+   `ratings_project_from_unique`).
+2. Selesaikan alur M5: lamaran mahasiswa di-**Diterima** mitra, lalu proyek
+   di-**Tandai Selesai**.
+3. **Rating oleh mitra**: buka `/dashboard/projects/[id]` → kartu pelamar
+   diterima kini menampilkan form rating (klik bintang ★ 1–5 + komentar) →
+   klik **Kirim Rating** → tampil "Anda menilai: ★★★★☆".
+4. **Rating oleh mahasiswa**: buka detail proyek sebagai mahasiswa → section
+   "Rating dua arah" → beri rating ke mitra → banner "Rating berhasil
+   terkirim".
+5. **Sertifikat**: di detail proyek mahasiswa (lamaran diterima + proyek
+   selesai), kartu sertifikat tampil — isi **jam kerja** manual lalu
+   screenshot kartunya.
+6. Cek tabel `ratings`: dua baris (mitra→mahasiswa dan mahasiswa→mitra) dengan
+   `stars` 1–5 dan `comment`.
+7. **Tes anti-duplikat**: coba kirim rating kedua → form sudah diganti tampilan
+   "Anda menilai: ★..." (dan dibenturkan unique index di database).
+
 ## Struktur
 
 ```
@@ -162,6 +197,8 @@ app/                          # App Router
     page.tsx                  # /projects — listing + filter
     [id]/page.tsx             # /projects/[id] — detail + lamaran (Milestone 4)
     [id]/apply-form.tsx       # form lamaran (client: alasan + upload portofolio)
+    rating-form.tsx           # form rating bintang 1–5 + komentar (Milestone 6)
+    certificate-card.tsx      # kartu sertifikat digital (jam kerja manual)
   student/page.tsx            # /student (mahasiswa, role-protected)
   layout.tsx                  # root layout + SiteHeader
   page.tsx                    # landing page
@@ -175,7 +212,7 @@ middleware.ts                 # jalankan updateSession di setiap request
 supabase/schema.sql           # 4 tabel + trigger + RLS policies
 ```
 
-## Milestone berikutnya (Milestone 6)
+## Milestone berikutnya (Milestone 7–8)
 
-Rating dua arah (mitra ↔ mahasiswa) + sertifikat digital sederhana tampil di
-profil mahasiswa.
+Isi data dengan studi kasus UMKM nyata, uji alur penuh end-to-end, dan
+rapikan tampilan untuk demo kompetisi.
