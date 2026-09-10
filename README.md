@@ -53,7 +53,7 @@ Lihat `ProjectBridge_PRD.md` untuk PRD lengkap.
 - [x] Detail proyek (publik) menampilkan tombol "Kelola pelamar" bagi pemilik proyek
 - [ ] Uji alur lamaran tetap (lamar → mitra diterima/tolak → tandai selesai)
 
-### Milestone 6 — Rating dua arah + sertifikat digital 🚧
+### Milestone 6 — Rating dua arah + sertifikat digital ✅
 
 - [x] Server Action `submitRatingAction` — bintang 1–5 + komentar, hanya setelah
   proyek ditandai selesai
@@ -67,6 +67,16 @@ Lihat `ProjectBridge_PRD.md` untuk PRD lengkap.
   proyek, mitra, jam kerja input manual, rating mitra — siap screenshot
 - [x] Dashboard mahasiswa: section "Proyek selesai" dengan link sertifikat
 - [ ] Uji alur rating + sertifikat di localhost
+
+### Milestone 7–8 — Data demo + polish demo ✅
+
+- [x] `supabase/seed.sql` — 2 mitra + 3 mahasiswa, 4 proyek (terbuka/berjalan/
+  selesai), lamaran (masuk/diterima/ditolak), rating dua arah — idempoten
+- [x] Kartu "Akun demo untuk uji coba" di landing page (akun + sandi jelas
+  untuk juri)
+- [x] Landing: section "Alur dalam 4 langkah"
+- [x] Header: link "Daftar Proyek" bagi pengguna yang sudah masuk
+- [ ] Jalankan seed di Supabase + uji alur penuh end-to-end
 
 ## Cara menjalankan (di laptop Anda)
 
@@ -179,6 +189,19 @@ Cek kesehatan: buka `http://localhost:3000/api/health` — harus mengembalikan
 7. **Tes anti-duplikat**: coba kirim rating kedua → form sudah diganti tampilan
    "Anda menilai: ★..." (dan dibenturkan unique index di database).
 
+## Data demo (Milestone 7)
+
+1. Di SQL Editor Supabase, jalankan `supabase/schema.sql` (sekali), lalu
+   `supabase/seed.sql` (idempoten — aman diulang).
+2. Seed membuat 5 akun demo (sandi semua: `demo1234`), 4 proyek dengan status
+   berbeda, 5 lamaran, dan 2 rating — studi kasus UMKM siap didemokan.
+3. Masuk dengan salah satu akun (daftar lengkap ada di landing page, section
+   "Akun demo untuk uji coba").
+4. Skenario demo live (PRD §10): login mitra Warung Kopi Wayan → tinjau
+   pelamar → rating → lihat proyek selesai "Logo & Kemasan Kopi Subak";
+   login mahasiswa dewa@student.id → /student → "Proyek selesai" → buka
+   sertifikat → isi jam kerja → screenshot.
+
 ## Struktur
 
 ```
@@ -209,10 +232,12 @@ lib/supabase/
   server.ts                   # server client (cookies)
   middleware.ts               # session refresh + route protection
 middleware.ts                 # jalankan updateSession di setiap request
-supabase/schema.sql           # 4 tabel + trigger + RLS policies
+supabase/schema.sql           # 4 tabel + trigger + RLS policies + storage bucket + index
+supabase/seed.sql             # data demo (Milestone 7) — akun, proyek, lamaran, rating
 ```
 
-## Milestone berikutnya (Milestone 7–8)
+## Semua milestone selesai 🎉
 
-Isi data dengan studi kasus UMKM nyata, uji alur penuh end-to-end, dan
-rapikan tampilan untuk demo kompetisi.
+Alur penuh siap didemokan sesuai PRD §10: posting → listing → lamar →
+terima → selesai → rating dua arah → sertifikat digital. Isi data demo via
+`supabase/seed.sql`, lalu jalankan skenario live di depan juri.

@@ -7,8 +7,8 @@ const milestones = [
   { n: "3", title: "Posting + listing proyek", desc: "Form mitra + daftar proyek dengan filter prodi", status: "done" },
   { n: "4", title: "Detail + lamaran + upload", desc: "Form lamaran + upload portofolio (maks 3 file)", status: "done" },
   { n: "5", title: "Dashboard mitra", desc: "Daftar pelamar + tandai proyek selesai", status: "done" },
-  { n: "6", title: "Rating + sertifikat", desc: "Rating dua arah + kartu sertifikat digital", status: "active" },
-  { n: "7–8", title: "Data nyata + polish demo", desc: "Studi kasus UMKM + uji alur penuh + polish tampilan" },
+  { n: "6", title: "Rating + sertifikat", desc: "Rating dua arah + kartu sertifikat digital", status: "done" },
+  { n: "7–8", title: "Data demo + polish", desc: "Seed studi kasus UMKM + uji alur penuh + polish tampilan", status: "done" },
 ];
 
 const roles = [
@@ -118,11 +118,78 @@ export default async function Home() {
         ))}
       </section>
 
+      {/* Alur */}
+      <section className="mt-12 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+        <h2 className="text-xl font-bold">Alur dalam 4 langkah</h2>
+        <ol className="mt-6 grid gap-5 md:grid-cols-4">
+          {[
+            { n: 1, t: "Mitra posting proyek", d: "Judul, deskripsi, prodi, kompensasi, deadline, opsi SKS." },
+            { n: 2, t: "Mahasiswa melamar", d: "Alasan singkat + portofolio (maks 3 file)." },
+            { n: 3, t: "Mitra meninjau", d: "Diterima/tolak pelamar, lalu tandai proyek selesai." },
+            { n: 4, t: "Rating + sertifikat", d: "Rating dua arah, lalu sertifikat digital siap screenshot." },
+          ].map((s) => (
+            <li
+              key={s.n}
+              className="rounded-xl border border-slate-100 bg-slate-50 p-4"
+            >
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
+                {s.n}
+              </span>
+              <p className="mt-3 font-semibold text-slate-900">{s.t}</p>
+              <p className="mt-1 text-sm text-slate-600">{s.d}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* Akun demo */}
+      <section className="mt-12 rounded-2xl border border-indigo-200 bg-indigo-50 p-6 md:p-8">
+        <h2 className="text-xl font-bold text-indigo-900">
+          Akun demo untuk uji coba
+        </h2>
+        <p className="mt-1 text-sm text-indigo-700">
+          Isi data contoh via{" "}
+          <code className="rounded bg-white px-1.5 py-0.5 font-mono text-xs">
+            supabase/seed.sql
+          </code>{" "}
+          di SQL Editor Supabase, lalu masuk dengan salah satu akun berikut
+          (sandi semua akun: <strong>demo1234</strong>).
+        </p>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="text-xs uppercase tracking-wide text-indigo-400">
+                <th className="py-2 pr-4 font-semibold">Peran</th>
+                <th className="py-2 pr-4 font-semibold">Email</th>
+                <th className="py-2 font-semibold">Catatan</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-indigo-100">
+              {[
+                { r: "Mitra", e: "mitra@warungwayan.id", c: "Warung Kopi Wayan — punya proyek selesai (lengkap dengan rating & sertifikat)" },
+                { r: "Mitra", e: "mitra@studiobatik.id", c: "Studio Batik Sanur — proyek berjalan & terbuka" },
+                { r: "Mahasiswa", e: "dewa@student.id", c: "DKV — lamaran diterima, proyek selesai (sudah saling dinilai)" },
+                { r: "Mahasiswa", e: "ayu@student.id", c: "Bisnis Digital — punya lamaran masuk & pernah ditolak" },
+                { r: "Mahasiswa", e: "gita@student.id", c: "Desain Interior — lamaran diterima (proyek berjalan)" },
+              ].map((a) => (
+                <tr key={a.e}>
+                  <td className="py-2 pr-4 font-medium text-slate-900">{a.r}</td>
+                  <td className="py-2 pr-4 font-mono text-xs text-slate-700">
+                    {a.e}
+                  </td>
+                  <td className="py-2 text-slate-600">{a.c}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       {/* Roadmap */}
       <section className="mt-12 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
         <h2 className="text-xl font-bold">Peta Milestone (sesuai PRD)</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Milestone 6 aktif — rating dua arah + sertifikat digital.
+          MVP lengkap — seluruh 8 milestone selesai, siap didemokan.
         </p>
         <ol className="mt-6 space-y-4">
           {milestones.map((m) => {
@@ -164,7 +231,7 @@ export default async function Home() {
       </section>
 
       <footer className="mt-10 text-center text-sm text-slate-400">
-        ProjectBridge · Milestone 6 — Rating + Sertifikat Digital
+        ProjectBridge · MVP lengkap — siap demo kompetisi
       </footer>
     </main>
   );
