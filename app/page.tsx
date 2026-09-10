@@ -4,8 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 const milestones = [
   { n: "1", title: "Setup & deploy kosong", desc: "Next.js + Supabase + pipeline Vercel jalan", status: "done" },
   { n: "2", title: "Autentikasi + database", desc: "Login mahasiswa/mitra + skema users, projects, applications, ratings + RLS", status: "done" },
-  { n: "3", title: "Posting + listing proyek", desc: "Form mitra + daftar proyek dengan filter prodi", status: "active" },
-  { n: "4", title: "Detail + apply + upload", desc: "Form lamaran + upload portofolio (maks 3 file)" },
+  { n: "3", title: "Posting + listing proyek", desc: "Form mitra + daftar proyek dengan filter prodi", status: "done" },
+  { n: "4", title: "Detail + apply + upload", desc: "Form lamaran + upload portofolio (maks 3 file)", status: "active" },
   { n: "5", title: "Dashboard mitra", desc: "Daftar pelamar + tandai proyek selesai" },
   { n: "6", title: "Rating + sertifikat", desc: "Rating dua arah + kartu sertifikat digital" },
   { n: "7–8", title: "Data nyata + polish demo", desc: "Studi kasus UMKM + uji alur penuh + polish tampilan" },
@@ -122,7 +122,7 @@ export default async function Home() {
       <section className="mt-12 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
         <h2 className="text-xl font-bold">Peta Milestone (sesuai PRD)</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Milestone 3 aktif — posting + listing proyek siap dipakai.
+          Milestone 4 aktif — detail proyek + lamaran + upload portofolio siap.
         </p>
         <ol className="mt-6 space-y-4">
           {milestones.map((m) => {
@@ -164,7 +164,7 @@ export default async function Home() {
       </section>
 
       <footer className="mt-10 text-center text-sm text-slate-400">
-        ProjectBridge · Milestone 3 — Posting + Listing Proyek
+        ProjectBridge · Milestone 4 — Detail + Lamaran Proyek
       </footer>
     </main>
   );

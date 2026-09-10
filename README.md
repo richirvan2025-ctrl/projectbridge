@@ -24,7 +24,7 @@ Lihat `ProjectBridge_PRD.md` untuk PRD lengkap.
 - [x] `SiteHeader` global dengan tombol Masuk/Daftar + sapaan + sign-out
 - [ ] Uji alur signup/login di localhost (lihat langkah di bawah)
 
-### Milestone 3 — Posting + listing proyek 🚧
+### Milestone 3 — Posting + listing proyek ✅
 
 - [x] Server Action `createProjectAction` + form posting proyek (sisi mitra)
 - [x] Halaman `/dashboard/new` (mitra saja) + tombol "+ Posting Proyek"
@@ -32,6 +32,16 @@ Lihat `ProjectBridge_PRD.md` untuk PRD lengkap.
 - [x] Listing `/projects` dengan filter prodi + pencarian judul (GET form)
 - [x] Dashboard mahasiswa menampilkan 5 proyek cocok (prodi) + link ke listing
 - [ ] Uji alur posting di localhost (isi proyek dummy lalu cek `/projects`)
+
+### Milestone 4 — Detail proyek + lamaran 🚧
+
+- [x] Halaman `/projects/[id]` — deskripsi lengkap, kompensasi, deadline, prodi, partner
+- [x] Server Action `applyProjectAction` — upload portofolio maks 3 file ke Storage +
+  simpan URL di `applications.portfolio_urls`
+- [x] Form lamaran: kolom alasan (min. 20 karakter) + file input (PDF/JPG/PNG/WEBP/GIF, 5 MB each)
+- [x] Proteksi anti-duplikat (1 student = 1 lamaran/proyek) + anti-lamaran proyek tidak terbuka
+- [x] Storage bucket `portfolios` (publik) + RLS policies di `supabase/schema.sql`
+- [ ] Uji alur lamaran di localhost (upload portofolio dummy → cek storage + `applications`)
 
 ## Cara menjalankan (di laptop Anda)
 
@@ -55,11 +65,11 @@ Cek kesehatan: buka `http://localhost:3000/api/health` — harus mengembalikan
 4. Restart `npm run dev` — badge di landing page berubah jadi
    "Supabase terhubung".
 
-## Setup database (Milestone 2)
+## Setup database (Milestone 2 + 4)
 
 1. Buka **SQL Editor** di Supabase Dashboard.
-2. Tempel seluruh isi `supabase/schema.sql` (sekarang sudah berisi trigger +
-   RLS policies).
+2. Tempel seluruh isi `supabase/schema.sql` (berisi trigger, RLS policies,
+   dan storage bucket `portfolios`).
 3. Klik **Run**. Tidak ada output error → schema siap.
 4. **Authentication > Providers > Email**: matikan toggle **Confirm email**
    (agar signup langsung aktif untuk demo lokal tanpa SMTP).
@@ -93,6 +103,21 @@ Cek kesehatan: buka `http://localhost:3000/api/health` — harus mengembalikan
 5. Tes filter `/projects` (get): pilih prodi lain / ketik kata kunci judul →
    URL berubah (`?prodi=...&q=...`) dan daftar menyesuaikan.
 
+## Uji alur Milestone 4
+
+1. Login sebagai **Mahasiswa** → buka `/projects` → klik judul proyek → detail
+   tampil (deskripsi, kompensasi, deadline, prodi, mitra).
+2. Di detail, isi form **Lamaran Anda**: alasan ≥ 20 karakter + upload 1–3
+   file (PDF/PNG/JPG max 5 MB) → submit.
+3. Redirect ke `/projects/[id]?applied=1` dengan badge "Lamaran berhasil disend".
+4. Cek Supabase: tabel `applications` berisi baris baru (`status='pending'`,
+   `portfolio_urls` array URL `/storage/v1/object/public/portfolios/...`).
+5. Cek **Storage > Buckets > portfolios** — file taha.
+6. **Tes anti-duplikat**: buka detail kembali → tombol lamaran sudah ganti
+   dengan "🎉 Anda sudah melamar proyek ini."
+7. **Tes proteksi role**: login sebagai Mitra → buka detail proyek sendiri →
+   informasi "Ini proyek yang Anda post" (lamaran bukan bagi mitra).
+
 ## Struktur
 
 ```
@@ -105,9 +130,11 @@ app/                          # App Router
   dashboard/page.tsx          # /dashboard (mitra, role-protected)
   dashboard/new/page.tsx      # /dashboard/new — form posting proyek (mitra)
   projects/                   # listing + form posting proyek (Milestone 3)
-    actions.ts                # createProjectAction (server action)
+    actions.ts                # createProjectAction + applyProjectAction (server action)
     new-project-form.tsx      # form posting proyek (client)
     page.tsx                  # /projects — listing + filter
+    [id]/page.tsx             # /projects/[id] — detail + lamaran (Milestone 4)
+    [id]/apply-form.tsx       # form lamaran (client: alasan + upload portofolio)
   student/page.tsx            # /student (mahasiswa, role-protected)
   layout.tsx                  # root layout + SiteHeader
   page.tsx                    # landing page
@@ -121,6 +148,7 @@ middleware.ts                 # jalankan updateSession di setiap request
 supabase/schema.sql           # 4 tabel + trigger + RLS policies
 ```
 
-## Milestone berikutnya (Milestone 4)
+## Milestone berikutnya (Milestone 5)
 
-Detail proyek + form lamaran (upload portofolio maks 3 file + kolom alasan).
+Dashboard mitra — daftar pelamar per proyek (vidi portofolio + alasan),
+accept/reject, dan tandai proyek sebagai selesai.

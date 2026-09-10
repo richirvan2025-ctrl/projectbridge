@@ -81,3 +81,127 @@ export async function createProjectAction(
   revalidatePath("/projects");
   redirect("/dashboard?created=1");
 }
+/**
+ * Milestone 4 — Mahasiswa melamar proyek dengan alasan + portofolio (maks 3).
+ * File di-upload ke Supabase Storage (bucket "portfolios"), URL publik
+ * disimpan di applications.portfolio_urls. RLS tetap benteng terakhir.
+ */
+const PORTFOLIO_BUCKET = "portfolios";
+const MAX_PORTFOLIO_FILE_BYTES = 5 * 1024 * 1024;
+
+function fileExtension(name: string): string {
+  const parts = name.split(".");
+  return parts.length > 1 && parts[parts.length - 1]
+    ? parts[parts.length - 1].toLowerCase()
+    : "file";
+}
+
+export async function applyProjectAction(
+  formData: FormData
+): Promise<ProjectActionResult> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?error=Silakan masuk terlebih dahulu.");
+  }
+
+  const projectId = String(formData.get("project_id") ?? "").trim();
+  const motivation = String(formData.get("motivation_text") ?? "").trim();
+  const files = formData
+    .getAll("portfolio")
+    .filter((f): f is File => typeof f === "object" && f.size > 0);
+
+  if (!projectId) {
+    return { error: "Proyek tidak valid." };
+  }
+  if (motivation.length < 20) {
+    return { error: "Kolom alasan minimal 20 karakter." };
+  }
+  if (files.length > 3) {
+    return { error: "Maksimal 3 file portofolio." };
+  }
+  for (const file of files) {
+    if (file.size > MAX_PORTFOLIO_FILE_BYTES) {
+      return { error: "Tiap file portofolio maksimal 5 MB." };
+    }
+  }
+
+  // Proyek harus masih terbuka
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, status")
+    .eq("id", projectId)
+    .single();
+
+  if (!project || project.status !== "open") {
+    return { error: "Proyek tidak ditemukan atau sudah tidak terbuka." };
+  }
+
+  // Role harus student
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "student") {
+    return { error: "Hanya mahasiswa yang bisa melamar proyek." };
+  }
+
+  // Tidak boleh lamar dua kali ke proyek yang sama
+  const { data: existingApplication } = await supabase
+    .from("applications")
+    .select("id")
+    .eq("project_id", projectId)
+    .eq("student_id", user.id)
+    .maybeSingle();
+
+  if (existingApplication) {
+    return { error: "Anda sudah melamar proyek ini." };
+  }
+
+  // Upload file portofolio → URL publik storage
+  const portfolioUrls: string[] = [];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const ext = fileExtension(file.name);
+    const path = `${user.id}/${projectId}/${Date.now()}-${i}.${ext}`;
+    const bytes = await file.arrayBuffer();
+
+    const { error: uploadError } = await supabase.storage
+      .from(PORTFOLIO_BUCKET)
+      .upload(path, bytes, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      return {
+        error: `Upload portofolio gagal (file ${i + 1}): ${uploadError.message}. Pastikan bucket "portfolios" sudah dibuat via supabase/schema.sql.`,
+      };
+    }
+
+    const { data: publicData } = supabase.storage
+      .from(PORTFOLIO_BUCKET)
+      .getPublicUrl(path);
+    portfolioUrls.push(publicData.publicUrl);
+  }
+
+  const { error } = await supabase.from("applications").insert({
+    project_id: projectId,
+    student_id: user.id,
+    motivation_text: motivation,
+    portfolio_urls: portfolioUrls,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath("/projects");
+  redirect(`/projects/${projectId}?applied=1`);
+}

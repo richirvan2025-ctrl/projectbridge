@@ -126,7 +126,12 @@ export default async function DashboardPage({
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="text-lg font-bold text-slate-900">{p.title}</h3>
+                  <Link
+                    href={`/projects/${p.id}`}
+                    className="text-lg font-bold text-slate-900 hover:text-indigo-700"
+                  >
+                    {p.title}
+                  </Link>
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${badge.className}`}
                   >

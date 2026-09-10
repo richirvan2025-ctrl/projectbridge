@@ -138,7 +138,12 @@ export default async function ProjectsPage({
                 key={p.id}
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
               >
-                <h2 className="text-lg font-bold text-slate-900">{p.title}</h2>
+                <Link
+                  href={`/projects/${p.id}`}
+                  className="text-lg font-bold text-slate-900 hover:text-indigo-700"
+                >
+                  {p.title}
+                </Link>
                 <p className="mt-2 text-sm leading-relaxed text-slate-600">
                   {p.description}
                 </p>

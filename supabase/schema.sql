@@ -1,4 +1,4 @@
--- ProjectBridge — skema database MVP (Milestone 2)
+-- ProjectBridge — skema database MVP (Milestone 4)
 -- Jalankan di Supabase Dashboard > SQL Editor (tempel seluruh file, lalu Run).
 -- Sesuai PRD §7: users, projects, applications, ratings.
 
@@ -221,3 +221,28 @@ drop policy if exists "ratings_insert_own" on public.ratings;
 create policy "ratings_insert_own"
   on public.ratings for insert
   with check (from_user_id = auth.uid());
+
+
+-- =============================================================================
+-- MILESTONE 4: Storage bucket "portfolios" + policies
+-- Jalankan berulang: aman (idempotent).
+-- Bucket publik agar mahasiswa bisa lacens URL portofolio langsung dari browser.
+-- =============================================================================
+
+-- 9) Bucket storage untuk file portofolio lamaran
+insert into storage.buckets (id, name, public)
+values ('portfolios', 'portfolios', true)
+on conflict (id) do nothing;
+
+-- Upload: cualquier authenticated user boleh upload ke bucket portfolios
+drop policy if exists "portfolio_files_insert" on storage.objects;
+create policy "portfolio_files_insert"
+  on storage.objects for insert
+  to authenticated
+  with check (bucket_id = 'portfolios');
+
+-- Select: siapa saja authenticated boleh baca metadata/list file
+drop policy if exists "portfolio_files_select" on storage.objects;
+create policy "portfolio_files_select"
+  on storage.objects for select
+  using (bucket_id = 'portfolios');

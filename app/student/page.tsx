@@ -90,7 +90,12 @@ export default async function StudentPage() {
                 key={p.id}
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
               >
-                <h3 className="text-lg font-bold text-slate-900">{p.title}</h3>
+                <Link
+                  href={`/projects/${p.id}`}
+                  className="text-lg font-bold text-slate-900 hover:text-indigo-700"
+                >
+                  {p.title}
+                </Link>
                 <p className="mt-2 text-sm leading-relaxed text-slate-600">
                   {p.description}
                 </p>
@@ -130,8 +135,8 @@ export default async function StudentPage() {
       </section>
 
       <p className="mt-6 text-sm text-slate-500">
-        🤝 Detail proyek + form lamaran (upload portofolio) akan tersedia di
-        Milestone 4.
+        🤝 Buka detail proyek untuk dilihat deskripsi lengkap dan send lamaran
+        dengan portofolio (maks 3 file).
       </p>
     </main>
   );
