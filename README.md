@@ -24,6 +24,15 @@ Lihat `ProjectBridge_PRD.md` untuk PRD lengkap.
 - [x] `SiteHeader` global dengan tombol Masuk/Daftar + sapaan + sign-out
 - [ ] Uji alur signup/login di localhost (lihat langkah di bawah)
 
+### Milestone 3 — Posting + listing proyek 🚧
+
+- [x] Server Action `createProjectAction` + form posting proyek (sisi mitra)
+- [x] Halaman `/dashboard/new` (mitra saja) + tombol "+ Posting Proyek"
+- [x] Dashboard mitra menampilkan daftar proyek milik mitra (badge status)
+- [x] Listing `/projects` dengan filter prodi + pencarian judul (GET form)
+- [x] Dashboard mahasiswa menampilkan 5 proyek cocok (prodi) + link ke listing
+- [ ] Uji alur posting di localhost (isi proyek dummy lalu cek `/projects`)
+
 ## Cara menjalankan (di laptop Anda)
 
 ```bash
@@ -69,6 +78,21 @@ Cek kesehatan: buka `http://localhost:3000/api/health` — harus mengembalikan
    `/login`. Login sebagai mahasiswa → akses `/dashboard` → harus redirect
    ke `/student`.
 
+## Uji alur Milestone 3
+
+1. Login sebagai **Mitra** → dashboard mitra menampilkan tombol
+   **"+ Posting Proyek"** → buka `/dashboard/new`.
+2. Isi form (judul, deskripsi ≥ 20 karakter, prodi tujuan, kompensasi,
+   deadline, opsi SKS) → submit → redirect ke `/dashboard?created=1` dan
+   proyek muncul di daftar "Proyek Anda".
+3. Pindah akun sebagai **Mahasiswa** → `/student` menampilkan 5 proyek yang
+   cocok dengan prodi Anda → klik **"Lihat semua proyek"** → `/projects`
+   dengan filter prodi + pencarian judul.
+4. Cek di Table Editor Supabase: baris baru di tabel `projects` dengan
+   `partner_id` = id mitra.
+5. Tes filter `/projects` (get): pilih prodi lain / ketik kata kunci judul →
+   URL berubah (`?prodi=...&q=...`) dan daftar menyesuaikan.
+
 ## Struktur
 
 ```
@@ -79,6 +103,11 @@ app/                          # App Router
     signup/                   # /signup
   api/health/                 # GET /api/health
   dashboard/page.tsx          # /dashboard (mitra, role-protected)
+  dashboard/new/page.tsx      # /dashboard/new — form posting proyek (mitra)
+  projects/                   # listing + form posting proyek (Milestone 3)
+    actions.ts                # createProjectAction (server action)
+    new-project-form.tsx      # form posting proyek (client)
+    page.tsx                  # /projects — listing + filter
   student/page.tsx            # /student (mahasiswa, role-protected)
   layout.tsx                  # root layout + SiteHeader
   page.tsx                    # landing page
@@ -92,7 +121,6 @@ middleware.ts                 # jalankan updateSession di setiap request
 supabase/schema.sql           # 4 tabel + trigger + RLS policies
 ```
 
-## Milestone berikutnya (Milestone 3)
+## Milestone berikutnya (Milestone 4)
 
-Posting proyek (sisi mitra) + listing proyek dengan filter prodi (sisi
-mahasiswa). Schema sudah siap — tinggal pakai.
+Detail proyek + form lamaran (upload portofolio maks 3 file + kolom alasan).

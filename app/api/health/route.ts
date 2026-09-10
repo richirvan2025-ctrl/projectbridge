@@ -8,7 +8,7 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     app: "projectbridge",
-    milestone: 1,
+    milestone: 3,
     supabaseConfigured,
     timestamp: new Date().toISOString(),
   });
