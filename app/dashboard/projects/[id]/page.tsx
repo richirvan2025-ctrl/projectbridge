@@ -139,7 +139,7 @@ export default async function DashboardProjectDetailPage({
 
       <section className="mt-6 grid gap-5 md:grid-cols-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Total pelamar</p>
+          <p className="text-sm font-medium text-slate-500">Jumlah pelamar</p>
           <p className="mt-1 text-2xl font-extrabold text-slate-900">
             {countTotal}
           </p>
@@ -204,7 +204,7 @@ export default async function DashboardProjectDetailPage({
                 type="submit"
                 className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
-                ↪ Buka Lamaran (reopen)
+                ↪ Buka Lamaran (buka kembali)
               </button>
             </form>
           )}
@@ -317,7 +317,7 @@ export default async function DashboardProjectDetailPage({
         <section className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
           <p className="font-semibold text-slate-700">Belum ada pelamar</p>
           <p className="mt-1 text-sm">
-            Share proyek ini ke mahasiswa — lamaran masuk akan tampil di sini.
+            Mampahkan proyek ini ke mahasiswa — lamaran masuk akan tampil di sini.
           </p>
         </section>
       )}

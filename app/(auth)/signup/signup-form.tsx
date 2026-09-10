@@ -46,7 +46,7 @@ export function SignupForm() {
             <div className="text-3xl">🎓</div>
             <p className="mt-2 font-bold text-slate-900">Mahasiswa</p>
             <p className="mt-1 text-xs text-slate-500">
-              Cari dan apply proyek riil sesuai prodi.
+              Cari dan lamar proyek riil sesuai prodi.
             </p>
           </button>
           <button

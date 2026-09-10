@@ -60,7 +60,7 @@ export default async function DashboardPage({
   const countInProgress = projects.filter((p) => p.status === "in_progress").length;
   const countCompleted = projects.filter((p) => p.status === "completed").length;
 
-  // Count pelamar per tiap proyek (una query sola)
+  // Jumlah pelamar per proyek (satu query saja)
   const projectIds = projects.map((p) => p.id);
   let applicationCounts: Record<string, number> = {};
   if (projectIds.length > 0) {

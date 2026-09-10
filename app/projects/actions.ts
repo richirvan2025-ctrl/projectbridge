@@ -207,7 +207,7 @@ export async function applyProjectAction(
 }
 
 /**
- * Milestone 5 — Mitra accept/reject lamaran di proyeknya.
+ * Milestone 5 — Mitra diterima/tolak lamaran di proyeknya.
  * RLS "applications_update_partner" garantezia: hanya partner pemilik proyek
  * yang bisa update status application.
  */

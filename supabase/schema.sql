@@ -177,7 +177,7 @@ create policy "applications_select_own_or_partner"
     )
   );
 
--- Hanya mahasiswa yang boleh apply, dan hanya untuk dirinya sendiri
+-- Hanya mahasiswa yang boleh lamar, dan hanya untuk dirinya sendiri
 drop policy if exists "applications_insert_student" on public.applications;
 create policy "applications_insert_student"
   on public.applications for insert
@@ -186,7 +186,7 @@ create policy "applications_insert_student"
     and public.current_user_role() = 'student'
   );
 
--- Mitra pemilik proyek boleh update status (accept/reject)
+-- Mitra pemilik proyek boleh update status (diterima/tolak)
 drop policy if exists "applications_update_partner" on public.applications;
 create policy "applications_update_partner"
   on public.applications for update
@@ -241,7 +241,7 @@ create policy "portfolio_files_insert"
   to authenticated
   with check (bucket_id = 'portfolios');
 
--- Select: siapa saja authenticated boleh baca metadata/list file
+-- Select: siapa saja authenticated boleh baca metadata daftar file
 drop policy if exists "portfolio_files_select" on storage.objects;
 create policy "portfolio_files_select"
   on storage.objects for select

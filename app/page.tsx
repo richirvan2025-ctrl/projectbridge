@@ -5,7 +5,7 @@ const milestones = [
   { n: "1", title: "Setup & deploy kosong", desc: "Next.js + Supabase + pipeline Vercel jalan", status: "done" },
   { n: "2", title: "Autentikasi + database", desc: "Login mahasiswa/mitra + skema users, projects, applications, ratings + RLS", status: "done" },
   { n: "3", title: "Posting + listing proyek", desc: "Form mitra + daftar proyek dengan filter prodi", status: "done" },
-  { n: "4", title: "Detail + apply + upload", desc: "Form lamaran + upload portofolio (maks 3 file)", status: "done" },
+  { n: "4", title: "Detail + lamaran + upload", desc: "Form lamaran + upload portofolio (maks 3 file)", status: "done" },
   { n: "5", title: "Dashboard mitra", desc: "Daftar pelamar + tandai proyek selesai", status: "active" },
   { n: "6", title: "Rating + sertifikat", desc: "Rating dua arah + kartu sertifikat digital" },
   { n: "7–8", title: "Data nyata + polish demo", desc: "Studi kasus UMKM + uji alur penuh + polish tampilan" },

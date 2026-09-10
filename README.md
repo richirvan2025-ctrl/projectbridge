@@ -47,11 +47,11 @@ Lihat `ProjectBridge_PRD.md` untuk PRD lengkap.
 
 - [x] Halaman `/dashboard/projects/[id]` — daftar pelamar per proyek (nome, prodi,
   email, alasan, portofolio, status, data)
-- [x] Server Action `updateApplicationStatusAction` — mitra accept/reject lamaran
-- [x] Server Action `updateProjectStatusAction` — tandai proyek berjalan/selesai/reopen
-- [x] Dashboard mitra menampilkan count pelamar per proyek + link "tinjau lamaran"
-- [x] Detail proyek (publik) menampilkan button "Kelola pelamar" bagi mitra owner
-- [ ] Uji alur lamaran tetap (lamar → mitra accept/reject → tandai selesai)
+- [x] Server Action `updateApplicationStatusAction` — mitra diterima/tolak lamaran
+- [x] Server Action `updateProjectStatusAction` — tandai proyek berjalan/selesai/buka kembali
+- [x] Dashboard mitra menampilkan jumlah pelamar per proyek + link "tinjau lamaran"
+- [x] Detail proyek (publik) menampilkan tombol "Kelola pelamar" bagi pemilik proyek
+- [ ] Uji alur lamaran tetap (lamar → mitra diterima/tolak → tandai selesai)
 
 ## Cara menjalankan (di laptop Anda)
 
@@ -130,7 +130,7 @@ Cek kesehatan: buka `http://localhost:3000/api/health` — harus mengembalikan
 
 ## Uji alur Milestone 5
 
-1. Login sebagai **Mitra** → dashboard menampilkan count pelamar per proyek →
+1. Login sebagai **Mitra** → dashboard menampilkan jumlah pelamar per proyek →
    klik tombol "👥 N pelamar — tinjau lamaran" (o buka
    `/dashboard/projects/[id]`).
 2. Pelamar dengan status **Masuk** berisi 2 tombol: **✓ Diterima** dan
