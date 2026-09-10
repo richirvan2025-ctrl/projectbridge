@@ -60,6 +60,20 @@ export default async function DashboardPage({
   const countInProgress = projects.filter((p) => p.status === "in_progress").length;
   const countCompleted = projects.filter((p) => p.status === "completed").length;
 
+  // Count pelamar per tiap proyek (una query sola)
+  const projectIds = projects.map((p) => p.id);
+  let applicationCounts: Record<string, number> = {};
+  if (projectIds.length > 0) {
+    const { data: apps } = await supabase
+      .from("applications")
+      .select("project_id")
+      .in("project_id", projectIds);
+    (apps ?? []).forEach((a) => {
+      applicationCounts[a.project_id] =
+        (applicationCounts[a.project_id] ?? 0) + 1;
+    });
+  }
+
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
       <header className="rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500 p-10 text-white shadow-xl">
@@ -127,7 +141,7 @@ export default async function DashboardPage({
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <Link
-                    href={`/projects/${p.id}`}
+                    href={`/dashboard/projects/${p.id}`}
                     className="text-lg font-bold text-slate-900 hover:text-indigo-700"
                   >
                     {p.title}
@@ -155,6 +169,12 @@ export default async function DashboardPage({
                     </>
                   )}
                 </p>
+                <Link
+                  href={`/dashboard/projects/${p.id}`}
+                  className="mt-3 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+                >
+                  👥 {applicationCounts[p.id] ?? 0} pelamar — tinjau lamaran →
+                </Link>
               </li>
             );
           })}

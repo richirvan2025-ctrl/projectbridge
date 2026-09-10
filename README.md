@@ -33,7 +33,7 @@ Lihat `ProjectBridge_PRD.md` untuk PRD lengkap.
 - [x] Dashboard mahasiswa menampilkan 5 proyek cocok (prodi) + link ke listing
 - [ ] Uji alur posting di localhost (isi proyek dummy lalu cek `/projects`)
 
-### Milestone 4 — Detail proyek + lamaran 🚧
+### Milestone 4 — Detail proyek + lamaran ✅
 
 - [x] Halaman `/projects/[id]` — deskripsi lengkap, kompensasi, deadline, prodi, partner
 - [x] Server Action `applyProjectAction` — upload portofolio maks 3 file ke Storage +
@@ -42,6 +42,16 @@ Lihat `ProjectBridge_PRD.md` untuk PRD lengkap.
 - [x] Proteksi anti-duplikat (1 student = 1 lamaran/proyek) + anti-lamaran proyek tidak terbuka
 - [x] Storage bucket `portfolios` (publik) + RLS policies di `supabase/schema.sql`
 - [ ] Uji alur lamaran di localhost (upload portofolio dummy → cek storage + `applications`)
+
+### Milestone 5 — Dashboard mitra 🚧
+
+- [x] Halaman `/dashboard/projects/[id]` — daftar pelamar per proyek (nome, prodi,
+  email, alasan, portofolio, status, data)
+- [x] Server Action `updateApplicationStatusAction` — mitra accept/reject lamaran
+- [x] Server Action `updateProjectStatusAction` — tandai proyek berjalan/selesai/reopen
+- [x] Dashboard mitra menampilkan count pelamar per proyek + link "tinjau lamaran"
+- [x] Detail proyek (publik) menampilkan button "Kelola pelamar" bagi mitra owner
+- [ ] Uji alur lamaran tetap (lamar → mitra accept/reject → tandai selesai)
 
 ## Cara menjalankan (di laptop Anda)
 
@@ -118,6 +128,22 @@ Cek kesehatan: buka `http://localhost:3000/api/health` — harus mengembalikan
 7. **Tes proteksi role**: login sebagai Mitra → buka detail proyek sendiri →
    informasi "Ini proyek yang Anda post" (lamaran bukan bagi mitra).
 
+## Uji alur Milestone 5
+
+1. Login sebagai **Mitra** → dashboard menampilkan count pelamar per proyek →
+   klik tombol "👥 N pelamar — tinjau lamaran" (o buka
+   `/dashboard/projects/[id]`).
+2. Pelamar dengan status **Masuk** berisi 2 tombol: **✓ Diterima** dan
+   **✕ Tolak**. Klik satu → banner "Perubahan berhasil disimpan" dan badge
+   status ganti.
+3. Section **Status proyek**: klik **▶ Tandai Berjalan** → badge proyek ganti;
+   klik **✅ Tandai Selesai** → proyek tidak terbuka untuk lamaran.
+4. Cek sisi mahasiswa: detail proyek yang sudah selesai → "Lamaran tidak terbuka
+   lagi". Proyek yang selesai tidak tampil lagi di listing `/projects` (filter
+   open).
+5. **Tes proteksi**: login sebagai mahasiswa → buka `/dashboard/projects/[id]` →
+   redirect ke `/dashboard`→`/student` (middleware role).
+
 ## Struktur
 
 ```
@@ -129,6 +155,7 @@ app/                          # App Router
   api/health/                 # GET /api/health
   dashboard/page.tsx          # /dashboard (mitra, role-protected)
   dashboard/new/page.tsx      # /dashboard/new — form posting proyek (mitra)
+  dashboard/projects/[id]/page.tsx  # /dashboard/projects/[id] — kelola pelamar (M5)
   projects/                   # listing + form posting proyek (Milestone 3)
     actions.ts                # createProjectAction + applyProjectAction (server action)
     new-project-form.tsx      # form posting proyek (client)
@@ -148,7 +175,7 @@ middleware.ts                 # jalankan updateSession di setiap request
 supabase/schema.sql           # 4 tabel + trigger + RLS policies
 ```
 
-## Milestone berikutnya (Milestone 5)
+## Milestone berikutnya (Milestone 6)
 
-Dashboard mitra — daftar pelamar per proyek (vidi portofolio + alasan),
-accept/reject, dan tandai proyek sebagai selesai.
+Rating dua arah (mitra ↔ mahasiswa) + sertifikat digital sederhana tampil di
+profil mahasiswa.

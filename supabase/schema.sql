@@ -1,4 +1,4 @@
--- ProjectBridge — skema database MVP (Milestone 4)
+-- ProjectBridge — skema database MVP (Milestone 5)
 -- Jalankan di Supabase Dashboard > SQL Editor (tempel seluruh file, lalu Run).
 -- Sesuai PRD §7: users, projects, applications, ratings.
 

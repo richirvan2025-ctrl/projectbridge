@@ -120,9 +120,14 @@ export default async function ProjectDetailPage({
           <p className="font-semibold text-indigo-800">
             Ini proyek yang Anda post, {partnerName ?? "Mitra"} 🙌
           </p>
-          <p className="mt-1 text-sm text-indigo-700">
-            Daftar pelamar + tandai proyek selesai akan tampil di Milestone 5.
-          </p>
+          <div className="mt-3">
+            <Link
+              href={`/dashboard/projects/${project.id}`}
+              className="inline-flex items-center gap-1 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+            >
+              Kelola pelamar →
+            </Link>
+          </div>
         </section>
       ) : !isOpen ? (
         <section className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6">

@@ -205,3 +205,94 @@ export async function applyProjectAction(
   revalidatePath("/projects");
   redirect(`/projects/${projectId}?applied=1`);
 }
+
+/**
+ * Milestone 5 — Mitra accept/reject lamaran di proyeknya.
+ * RLS "applications_update_partner" garantezia: hanya partner pemilik proyek
+ * yang bisa update status application.
+ */
+export async function updateApplicationStatusAction(
+  formData: FormData
+): Promise<void> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?error=Silakan masuk terlebih dahulu.");
+  }
+
+  const applicationId = String(formData.get("application_id") ?? "").trim();
+  const status = String(formData.get("status") ?? "").trim();
+
+  if (!applicationId || (status !== "accepted" && status !== "rejected")) {
+    redirect("/dashboard?error=Lamaran atau status tidak valid.");
+  }
+
+  const { data: application } = await supabase
+    .from("applications")
+    .select("id, project_id")
+    .eq("id", applicationId)
+    .single();
+
+  if (!application) {
+    redirect("/dashboard?error=Lamaran tidak ditemukan.");
+  }
+
+  const { error } = await supabase
+    .from("applications")
+    .update({ status })
+    .eq("id", applicationId);
+
+  if (error) {
+    redirect(`/dashboard/projects/${application.project_id}?error=1`);
+  }
+
+  revalidatePath(`/dashboard/projects/${application.project_id}`);
+  revalidatePath(`/projects/${application.project_id}`);
+  redirect(`/dashboard/projects/${application.project_id}?updated=1`);
+}
+
+/**
+ * Milestone 5 — Mitra tandai status proyek (selesai / berjalan / terbuka).
+ * RLS "projects_update_own" garantezia: hanya partner pemilik.
+ */
+export async function updateProjectStatusAction(
+  formData: FormData
+): Promise<void> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?error=Silakan masuk terlebih dahulu.");
+  }
+
+  const projectId = String(formData.get("project_id") ?? "").trim();
+  const status = String(formData.get("status") ?? "").trim();
+
+  if (
+    !projectId ||
+    (status !== "open" &&
+      status !== "in_progress" &&
+      status !== "completed")
+  ) {
+    redirect("/dashboard?error=Proyek atau status tidak valid.");
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update({ status })
+    .eq("id", projectId);
+
+  if (error) {
+    redirect(`/dashboard/projects/${projectId}?error=1`);
+  }
+
+  revalidatePath(`/dashboard/projects/${projectId}`);
+  revalidatePath(`/dashboard`);
+  revalidatePath(`/projects`);
+  redirect(`/dashboard/projects/${projectId}?updated=1`);
+}
