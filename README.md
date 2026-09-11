@@ -102,6 +102,23 @@ Lihat `ProjectBridge_PRD.md` untuk PRD lengkap.
 > ulang constraint `users_role_check` agar role `campus` diizinkan. Aman
 > dijalankan berulang (idempotent).
 
+> **Troubleshooting login — `500: Database error querying schema`**: bila login
+> akun demo gagal dengan pesan ini, penyebabnya adalah kolom token di
+> `auth.users` (mis. `confirmation_token`, `recovery_token`, `email_change`)
+> bernilai `NULL` karena INSERT langsung ke `auth.users`. GoTrue memerlukan
+> string kosong (`''`), bukan `NULL`. Jalankan ulang `supabase/seed.sql`
+> (bagian **3c** memperbaikinya otomatis), atau secara manual di SQL Editor:
+>
+> ```sql
+> update auth.users
+> set confirmation_token = '', recovery_token = '',
+>     email_change = '', email_change_token_new = '', phone_change = ''
+> where confirmation_token is null or recovery_token is null
+>    or email_change is null or email_change_token_new is null;
+> ```
+>
+> Referensi: <https://supabase.com/docs/guides/troubleshooting/auth-error-500-database-error-querying-schema-eb6b44>
+
 ## Cara menjalankan (di laptop Anda)
 
 ```bash

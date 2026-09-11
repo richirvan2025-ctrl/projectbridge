@@ -135,6 +135,44 @@ where a.email in (
     select 1 from public.users u where u.id = a.id or u.email = a.email
   );
 
+-- 3c) Perbaiki kolom token Auth yang NULL pada baris akun demo.
+--     INSERT langsung ke auth.users (memang disengaja di seed ini) membuat
+--     kolom token tidak terisi => bernilai NULL. GoTrue men-scan kolom itu
+--     sebagai string sehingga login gagal dengan:
+--       500 "Database error querying schema"
+--       (converting NULL to string is unsupported)
+--     Supabase mensyaratkan kolom tersebut berisi string kosong ('') — bukan
+--     NULL. Blok ini sekaligus "menyembuhkan" baris lama yang dibuat sebelum
+--     perbaikan ini, dan hanya menyentuh kolom yang benar-benar ada (aman
+--     lintas versi skema Auth Supabase).
+do $$
+declare
+  col text;
+  demo_emails text[] := array[
+    'mitra@warungwayan.id', 'mitra@studiobatik.id',
+    'dewa@student.id', 'ayu@student.id', 'gita@student.id',
+    'kampus@idb-bali.ac.id'
+  ];
+begin
+  foreach col in array array[
+    'confirmation_token', 'recovery_token', 'email_change',
+    'email_change_token_new', 'email_change_token_current',
+    'phone_change', 'phone_change_token', 'reauthentication_token'
+  ] loop
+    if exists (
+      select 1 from information_schema.columns
+      where table_schema = 'auth'
+        and table_name = 'users'
+        and column_name = col
+    ) then
+      execute format(
+        'update auth.users set %I = '''' where %I is null and email = any($1)',
+        col, col
+      ) using demo_emails;
+    end if;
+  end loop;
+end $$;
+
 -- 4) Proyek (4 status berbeda untuk demo penuh)
 --    UUID mitra tetap (1111...) dipetakan ke ID yang ADA di database via email,
 --    karena akun demo bisa punya UUID berbeda-beda.
