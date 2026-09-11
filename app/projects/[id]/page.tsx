@@ -38,7 +38,7 @@ export default async function ProjectDetailPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: URLSearchParams;
+  searchParams?: { applied?: string; rated?: string };
 }) {
   const supabase = createClient();
   const {
@@ -112,8 +112,8 @@ export default async function ProjectDetailPage({
     ratingFromPartner = received;
   }
 
-  const justApplied = searchParams.get("applied") === "1";
-  const justRated = searchParams.get("rated") === "1";
+  const justApplied = searchParams?.applied === "1";
+  const justRated = searchParams?.rated === "1";
   const badge = STATUS_LABEL[project.status] ?? STATUS_LABEL.open;
   const issuedAt = new Date().toLocaleDateString("id-ID", {
     day: "numeric",

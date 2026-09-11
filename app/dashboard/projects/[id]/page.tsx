@@ -56,7 +56,7 @@ export default async function DashboardProjectDetailPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: URLSearchParams;
+  searchParams?: { updated?: string; error?: string; rated?: string };
 }) {
   const supabase = createClient();
   const {
@@ -95,9 +95,9 @@ export default async function DashboardProjectDetailPage({
   const countPending = applications.filter((a) => a.status === "pending").length;
   const countAccepted = applications.filter((a) => a.status === "accepted").length;
   const countRejected = applications.filter((a) => a.status === "rejected").length;
-  const justUpdated = searchParams.get("updated") === "1";
-  const hasError = searchParams.get("error") === "1";
-  const justRated = searchParams.get("rated") === "1";
+  const justUpdated = searchParams?.updated === "1";
+  const hasError = searchParams?.error === "1";
+  const justRated = searchParams?.rated === "1";
   const badge = STATUS_LABEL[project.status] ?? STATUS_LABEL.open;
 
   // Milestone 6: rating yang sudah dikirim mitra (per mahasiswa)

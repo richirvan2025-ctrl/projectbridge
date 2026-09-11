@@ -30,7 +30,7 @@ function getPartnerBusinessName(partner: unknown): string | null {
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: URLSearchParams;
+  searchParams?: { prodi?: string; q?: string };
 }) {
   const supabase = createClient();
   const {
@@ -41,8 +41,9 @@ export default async function ProjectsPage({
     redirect("/login?error=Silakan masuk terlebih dahulu.");
   }
 
-  const prodi = searchParams.get("prodi")?.trim() ?? "";
-  const q = searchParams.get("q")?.trim() ?? "";
+  const prodi =
+    typeof searchParams?.prodi === "string" ? searchParams.prodi.trim() : "";
+  const q = typeof searchParams?.q === "string" ? searchParams.q.trim() : "";
 
   let query = supabase
     .from("projects")

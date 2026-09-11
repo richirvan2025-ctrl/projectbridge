@@ -25,7 +25,7 @@ function formatDeadline(iso: string) {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: URLSearchParams;
+  searchParams?: { created?: string };
 }) {
   const supabase = createClient();
   const {
@@ -88,7 +88,7 @@ export default async function DashboardPage({
         </p>
       </header>
 
-      {searchParams.get("created") === "1" && (
+      {searchParams?.created === "1" && (
         <div
           role="status"
           className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
