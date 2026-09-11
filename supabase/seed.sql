@@ -74,10 +74,10 @@ where not exists (
 
 -- 3) Identitas email (diperlukan login email+password pada versi Supabase baru)
 insert into auth.identities (
-  id, user_id, provider_id, identity_data, last_sign_in_at, created_at, updated_at
+  id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
 )
 select
-  gen_random_uuid(), a.id, 'email',
+  gen_random_uuid(), a.id, a.id::text, 'email',
   jsonb_build_object('sub', a.id::text, 'email', a.email),
   now(), now(), now()
 from auth.users a
@@ -87,16 +87,44 @@ where a.email in (
 )
   and not exists (
     select 1 from auth.identities i
-    where i.user_id = a.id and i.provider_id = 'email'
+    where i.user_id = a.id and i.provider = 'email'
+  )
+on conflict (provider_id, provider) do nothing;
+
+-- 3b) Lengkapi profil public.users yang hilang (kasus: akun demo sudah ada di
+--     auth.users tapi dibuat sebelum trigger handle_new_user() dipasang,
+--     sehingga profilnya tidak terbentuk). ID diambil dari baris auth yang ada.
+insert into public.users (id, role, name, email, prodi, business_name)
+select
+  a.id,
+  coalesce(a.raw_user_meta_data->>'role', 'student'),
+  coalesce(a.raw_user_meta_data->>'name', split_part(a.email, '@', 1)),
+  a.email,
+  a.raw_user_meta_data->>'prodi',
+  a.raw_user_meta_data->>'business_name'
+from auth.users a
+where a.email in (
+  'mitra@warungwayan.id', 'mitra@studiobatik.id',
+  'dewa@student.id', 'ayu@student.id', 'gita@student.id'
+)
+  and not exists (
+    select 1 from public.users u where u.id = a.id or u.email = a.email
   );
 
 -- 4) Proyek (4 status berbeda untuk demo penuh)
+--    UUID mitra tetap (1111...) dipetakan ke ID yang ADA di database via email,
+--    karena akun demo bisa punya UUID berbeda-beda.
+with seed_partner_map (fixed_id, real_id) as (
+  values
+    ('11111111-1111-1111-1111-111111111101'::uuid, (select id from public.users where email = 'mitra@warungwayan.id')),
+    ('11111111-1111-1111-1111-111111111102'::uuid, (select id from public.users where email = 'mitra@studiobatik.id'))
+)
 insert into public.projects (
   id, partner_id, title, description, prodi_target,
   compensation, deadline, sks_eligible, status, created_at
 )
 select
-  p.id, p.partner_id, p.title, p.description, p.prodi_target,
+  p.id, pm.real_id, p.title, p.description, p.prodi_target,
   p.compensation, p.deadline::date, p.sks, p.status,
   now() - (p.days || ' days')::interval
 from (values
@@ -141,15 +169,25 @@ roasting. Proyek ini sudah selesai dikerjakan.',
     'Rp 1.200.000', '2026-08-15', true, 'completed', 40
   )
 ) as p(id, partner_id, title, description, prodi_target, compensation, deadline, sks, status, days)
+join seed_partner_map pm on pm.fixed_id = p.partner_id
 where not exists (
   select 1 from public.projects x where x.id = p.id
 );
 
 -- 5) Lamaran (contoh semua status: masuk, diterima, ditolak)
+--    UUID mahasiswa tetap (2222...) dipetakan ke ID yang ADA via email.
+with seed_student_map (fixed_id, real_id) as (
+  values
+    ('22222222-2222-2222-2222-222222222201'::uuid, (select id from public.users where email = 'dewa@student.id')),
+    ('22222222-2222-2222-2222-222222222202'::uuid, (select id from public.users where email = 'ayu@student.id')),
+    ('22222222-2222-2222-2222-222222222203'::uuid, (select id from public.users where email = 'gita@student.id'))
+)
 insert into public.applications (
   project_id, student_id, motivation_text, portfolio_urls, status, created_at
 )
-values
+select v.project_id, sm.real_id, v.motivation_text, v.portfolio_urls, v.status, v.created_at
+from (
+  values
   (
     '33333333-3333-3333-3333-333333333304'::uuid,
     '22222222-2222-2222-2222-222222222201'::uuid,
@@ -198,13 +236,23 @@ Bali 2025.',
     ],
     'accepted', now() - interval '9 days'
   )
+) as v(project_id, student_id, motivation_text, portfolio_urls, status, created_at)
+join seed_student_map sm on sm.fixed_id = v.student_id
 on conflict (project_id, student_id) do nothing;
 
 -- 6) Rating dua arah untuk proyek yang selesai (P4 — Kopi Subak)
+--    Kedua sisi dipetakan ke ID yang ADA via email.
+with seed_idmap (fixed_id, real_id) as (
+  values
+    ('11111111-1111-1111-1111-111111111101'::uuid, (select id from public.users where email = 'mitra@warungwayan.id')),
+    ('22222222-2222-2222-2222-222222222201'::uuid, (select id from public.users where email = 'dewa@student.id'))
+)
 insert into public.ratings (
   project_id, from_user_id, to_user_id, stars, comment, created_at
 )
-values
+select v.project_id, sp.real_id, ss.real_id, v.stars, v.comment, v.created_at
+from (
+  values
   (
     '33333333-3333-3333-3333-333333333304'::uuid,
     '11111111-1111-1111-1111-111111111101'::uuid,
@@ -223,4 +271,7 @@ pakai untuk produksi pertama.',
 sedang ramai, tapi hasilnya memuaskan.',
     now() - interval '9 days'
   )
+) as v(project_id, from_user_id, to_user_id, stars, comment, created_at)
+join seed_idmap sp on sp.fixed_id = v.from_user_id
+join seed_idmap ss on ss.fixed_id = v.to_user_id
 on conflict (project_id, from_user_id) do nothing;
