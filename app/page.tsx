@@ -9,12 +9,14 @@ const milestones = [
   { n: "5", title: "Dashboard mitra", desc: "Daftar pelamar + tandai proyek selesai", status: "done" },
   { n: "6", title: "Rating + sertifikat", desc: "Rating dua arah + kartu sertifikat digital", status: "done" },
   { n: "7–8", title: "Data demo + polish", desc: "Seed studi kasus UMKM + uji alur penuh + polish tampilan", status: "done" },
+  { n: "9", title: "Dashboard kampus", desc: "Monitoring & pelaporan: mahasiswa per prodi, proyek, mitra, lamaran, rating", status: "done" },
 ];
 
 const roles = [
   { emoji: "🎓", title: "Mahasiswa", desc: "Cari proyek riil sesuai prodi — DKV, Bisnis Digital, Desain Interior, Desain Mode, Arsitektur — dan ajukan portofoliomu." },
   { emoji: "🏪", title: "Mitra UMKM/Studio", desc: "Posting kebutuhan proyek kecil-menengah, tinjau pelamar, dan tandai proyek selesai." },
   { emoji: "🏅", title: "Sertifikat SKS", desc: "Proyek yang memenuhi syarat bisa diajukan untuk konversi SKS, lengkap dengan rating dua arah." },
+  { emoji: "🏫", title: "Kampus", desc: "Pantau mahasiswa terdaftar per prodi, proyek yang ditawarkan mitra, status proyek, dan rating lewat dashboard monitoring read-only." },
 ];
 
 export default async function Home() {
@@ -22,8 +24,9 @@ export default async function Home() {
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder");
 
-  // Personalisasi hero kalau user login. Gagal silencieux.
-  let loggedIn: { name: string; role: "student" | "partner" } | null = null;
+  // Personalisasi hero kalau user sudah login. Kalau gagal, diamkan saja.
+  let loggedIn: { name: string; role: "student" | "partner" | "campus" } | null =
+    null;
   try {
     const supabase = createClient();
     const {
@@ -34,7 +37,7 @@ export default async function Home() {
         .from("users")
         .select("name, role")
         .eq("id", user.id)
-        .single<{ name: string; role: "student" | "partner" }>();
+        .single<{ name: string; role: "student" | "partner" | "campus" }>();
       if (profile?.name && profile?.role) {
         loggedIn = { name: profile.name, role: profile.role };
       }
@@ -58,7 +61,9 @@ export default async function Home() {
             Halo, <strong>{loggedIn.name}</strong> — siap{" "}
             {loggedIn.role === "partner"
               ? "merekrut mahasiswa untuk proyek Anda."
-              : "menemukan proyek yang cocok untuk prodi Anda."}
+              : loggedIn.role === "campus"
+                ? "memantau aktivitas proyek kampus."
+                : "menemukan proyek yang cocok untuk prodi Anda."}
           </p>
         ) : (
           <p className="mt-4 max-w-2xl text-lg text-white/90">
@@ -70,7 +75,13 @@ export default async function Home() {
         <div className="mt-8 flex flex-wrap gap-3">
           {loggedIn ? (
             <Link
-              href={loggedIn.role === "partner" ? "/dashboard" : "/student"}
+              href={
+                loggedIn.role === "partner"
+                  ? "/dashboard"
+                  : loggedIn.role === "campus"
+                    ? "/campus"
+                    : "/student"
+              }
               className="rounded-full bg-white px-6 py-3 font-semibold text-indigo-700 shadow hover:bg-indigo-50"
             >
               Buka Dashboard
@@ -103,7 +114,7 @@ export default async function Home() {
       </section>
 
       {/* Roles */}
-      <section className="mt-12 grid gap-5 md:grid-cols-3">
+      <section className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {roles.map((r) => (
           <div
             key={r.title}
@@ -171,6 +182,7 @@ export default async function Home() {
                 { r: "Mahasiswa", e: "dewa@student.id", c: "DKV — lamaran diterima, proyek selesai (sudah saling dinilai)" },
                 { r: "Mahasiswa", e: "ayu@student.id", c: "Bisnis Digital — punya lamaran masuk & pernah ditolak" },
                 { r: "Mahasiswa", e: "gita@student.id", c: "Desain Interior — lamaran diterima (proyek berjalan)" },
+                { r: "Kampus", e: "kampus@idb-bali.ac.id", c: "Admin Kampus — dashboard monitoring per prodi, proyek, mitra & lamaran" },
               ].map((a) => (
                 <tr key={a.e}>
                   <td className="py-2 pr-4 font-medium text-slate-900">{a.r}</td>
@@ -189,7 +201,7 @@ export default async function Home() {
       <section className="mt-12 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
         <h2 className="text-xl font-bold">Peta Milestone (sesuai PRD)</h2>
         <p className="mt-1 text-sm text-slate-500">
-          MVP lengkap — seluruh 8 milestone selesai, siap didemokan.
+          MVP lengkap — seluruh 9 milestone selesai, siap didemokan.
         </p>
         <ol className="mt-6 space-y-4">
           {milestones.map((m) => {

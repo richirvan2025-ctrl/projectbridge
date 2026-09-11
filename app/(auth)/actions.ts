@@ -38,6 +38,8 @@ export async function signInAction(formData: FormData): Promise<ActionResult> {
 
     if (profile?.role === "partner") {
       redirect("/dashboard");
+    } else if (profile?.role === "campus") {
+      redirect("/campus");
     } else {
       redirect("/student");
     }

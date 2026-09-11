@@ -1,13 +1,14 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-type AppRole = "student" | "partner" | null;
+type AppRole = "student" | "partner" | "campus" | null;
 
 // Path yang wajib login. Key = path prefix, value = role yang diizinkan
 // (null = siapa saja yang login boleh akses, tanpa cek role).
 const PROTECTED_PATHS: Record<string, AppRole> = {
   "/dashboard": "partner",
   "/student": "student",
+  "/campus": "campus",
 };
 
 function getRequiredRole(pathname: string): {
@@ -88,7 +89,9 @@ export async function updateSession(request: NextRequest) {
             ? "/dashboard"
             : userRole === "student"
               ? "/student"
-              : "/login";
+              : userRole === "campus"
+                ? "/campus"
+                : "/login";
         return NextResponse.redirect(new URL(target, request.url));
       }
     }

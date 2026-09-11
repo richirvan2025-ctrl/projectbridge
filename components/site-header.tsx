@@ -2,7 +2,7 @@ import Link from "next/link";
 import { signOutAction } from "@/app/(auth)/actions";
 
 type Props = {
-  user: { name: string; role: "student" | "partner" } | null;
+  user: { name: string; role: "student" | "partner" | "campus" } | null;
 };
 
 export function SiteHeader({ user }: Props) {
@@ -23,7 +23,11 @@ export function SiteHeader({ user }: Props) {
               <span className="hidden text-slate-500 sm:inline">
                 Halo, <strong className="text-slate-900">{user.name}</strong>{" "}
                 <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-                  {user.role === "partner" ? "Mitra" : "Mahasiswa"}
+                  {user.role === "partner"
+                    ? "Mitra"
+                    : user.role === "campus"
+                      ? "Kampus"
+                      : "Mahasiswa"}
                 </span>
               </span>
               <Link
@@ -33,7 +37,13 @@ export function SiteHeader({ user }: Props) {
                 Daftar Proyek
               </Link>
               <Link
-                href={user.role === "partner" ? "/dashboard" : "/student"}
+                href={
+                  user.role === "partner"
+                    ? "/dashboard"
+                    : user.role === "campus"
+                      ? "/campus"
+                      : "/student"
+                }
                 className="rounded-full bg-indigo-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-indigo-700"
               >
                 Dashboard

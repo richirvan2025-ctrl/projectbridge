@@ -12,10 +12,11 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // Baca user untuk SiteHeader. Gagal silencieux (header tetap render
-  // dengan state "logged out") supaya error Supabase tidak crash seluruh
-  // layout.
-  let headerUser: { name: string; role: "student" | "partner" } | null = null;
+  // Baca user untuk SiteHeader. Kalau gagal, diamkan saja (header tetap
+  // dirender dengan status "belum masuk") supaya error Supabase tidak
+  // membuat seluruh layout crash.
+  let headerUser: { name: string; role: "student" | "partner" | "campus" } | null =
+    null;
   try {
     const supabase = createClient();
     const {
@@ -26,7 +27,7 @@ export default async function RootLayout({
         .from("users")
         .select("name, role")
         .eq("id", user.id)
-        .single<{ name: string; role: "student" | "partner" }>();
+        .single<{ name: string; role: "student" | "partner" | "campus" }>();
       if (profile?.name && profile?.role) {
         headerUser = { name: profile.name, role: profile.role };
       }

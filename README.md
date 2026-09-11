@@ -78,6 +78,30 @@ Lihat `ProjectBridge_PRD.md` untuk PRD lengkap.
 - [x] Header: link "Daftar Proyek" bagi pengguna yang sudah masuk
 - [ ] Jalankan seed di Supabase + uji alur penuh end-to-end
 
+### Milestone 9 — Dashboard kampus (monitoring & pelaporan) ✅
+
+- [x] Role baru `campus` (constraint `users_role_check` + trigger otomatis untuk
+  email domain `@idb-bali.ac.id`) + middleware proteksi `/campus`
+- [x] Halaman `/campus` (read-only, role kampus saja) berisi:
+  - **Laporan 1** — mahasiswa terdaftar **per prodi** (jumlah mahasiswa, yang
+    aktif melamar, proyek ditawarkan, lamaran terkait) + baris total
+  - **Laporan 2** — daftar **mitra** + kontribusi (proyek, proyek selesai,
+    pelamar, diterima)
+  - **Laporan 3** — daftar **proyek** lintas mitra dengan **filter prodi &
+    status**
+  - **Laporan 4** — **ringkasan lamaran** (masuk/diterima/ditolak + persentase)
+  - Kartu ringkasan: mahasiswa terdaftar, proyek ditawarkan (per status),
+    mitra, rata-rata rating, jumlah proyek bisa SKS
+- [x] Tombol **Cetak laporan** (`print-button.tsx`) — simpan sebagai PDF lewat
+  `window.print()` tanpa dependensi baru
+- [x] Akun demo kampus `kampus@idb-bali.ac.id` (sandi `demo1234`) di `seed.sql`
+- [ ] Jalankan ulang `schema.sql` (migrasi constraint role) + uji `/campus`
+
+> **Penting (migrasi)**: bila database sudah dibuat sebelum Milestone 9,
+> jalankan ulang `supabase/schema.sql` — bagian **1b** men-drop lalu menambah
+> ulang constraint `users_role_check` agar role `campus` diizinkan. Aman
+> dijalankan berulang (idempotent).
+
 ## Cara menjalankan (di laptop Anda)
 
 ```bash
@@ -100,7 +124,7 @@ Cek kesehatan: buka `http://localhost:3000/api/health` — harus mengembalikan
 4. Restart `npm run dev` — badge di landing page berubah jadi
    "Supabase terhubung".
 
-## Setup database (Milestone 2 + 4)
+## Setup database (Milestone 2 + 4 + 9)
 
 1. Buka **SQL Editor** di Supabase Dashboard.
 2. Tempel seluruh isi `supabase/schema.sql` (berisi trigger, RLS policies,
@@ -193,8 +217,9 @@ Cek kesehatan: buka `http://localhost:3000/api/health` — harus mengembalikan
 
 1. Di SQL Editor Supabase, jalankan `supabase/schema.sql` (sekali), lalu
    `supabase/seed.sql` (idempoten — aman diulang).
-2. Seed membuat 5 akun demo (sandi semua: `demo1234`), 4 proyek dengan status
-   berbeda, 5 lamaran, dan 2 rating — studi kasus UMKM siap didemokan.
+2. Seed membuat 6 akun demo (sandi semua: `demo1234`) — 2 mitra, 3 mahasiswa,
+   1 admin kampus — plus 4 proyek dengan status berbeda, 5 lamaran, dan 2
+   rating, sehingga studi kasus UMKM siap didemokan.
 3. Masuk dengan salah satu akun (daftar lengkap ada di landing page, section
    "Akun demo untuk uji coba").
 4. Skenario demo live (PRD §10): login mitra Warung Kopi Wayan → tinjau
@@ -223,6 +248,9 @@ app/                          # App Router
     rating-form.tsx           # form rating bintang 1–5 + komentar (Milestone 6)
     certificate-card.tsx      # kartu sertifikat digital (jam kerja manual)
   student/page.tsx            # /student (mahasiswa, role-protected)
+  campus/                     # /campus — dashboard monitoring kampus (Milestone 9)
+    page.tsx                  #   laporan per prodi, mitra, proyek, lamaran
+    print-button.tsx          #   tombol cetak/simpan PDF (client)
   layout.tsx                  # root layout + SiteHeader
   page.tsx                    # landing page
 components/
@@ -241,3 +269,15 @@ supabase/seed.sql             # data demo (Milestone 7) — akun, proyek, lamara
 Alur penuh siap didemokan sesuai PRD §10: posting → listing → lamar →
 terima → selesai → rating dua arah → sertifikat digital. Isi data demo via
 `supabase/seed.sql`, lalu jalankan skenario live di depan juri.
+
+## Uji alur Milestone 9 (dashboard kampus)
+
+1. Jalankan ulang `supabase/schema.sql` (migrasi role kampus) lalu `seed.sql`.
+2. Login `kampus@idb-bali.ac.id` / `demo1234` → otomatis masuk ke `/campus`.
+3. Cek **Laporan 1**: baris per prodi (DKV, Bisnis Digital, Desain Interior…)
+   dengan jumlah mahasiswa, proyek, dan lamaran.
+4. Cek **Laporan 2 (mitra)** dan **Laporan 4 (ringkasan lamaran)**.
+5. Coba **filter prodi & status** di Laporan 3 → daftar proyek menyempit.
+6. Klik **Cetak laporan** → dialog cetak browser terbuka (bisa Save as PDF).
+7. **Tes proteksi**: login sebagai mahasiswa → akses `/campus` → harus
+   diarahkan kembali ke `/student`.

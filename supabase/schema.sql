@@ -1,17 +1,26 @@
--- ProjectBridge — skema database MVP (Milestone 6)
+-- ProjectBridge — skema database MVP (Milestone 9: + role kampus)
 -- Jalankan di Supabase Dashboard > SQL Editor (tempel seluruh file, lalu Run).
--- Sesuai PRD §7: users, projects, applications, ratings.
+-- Sesuai PRD §7: users, projects, applications, ratings (+ monitoring kampus).
+-- Idempotent: aman dijalankan ulang pada database yang sudah ada.
 
 -- 1) Tabel users (profil, terhubung ke auth.users)
 create table if not exists public.users (
   id uuid primary key references auth.users (id) on delete cascade,
-  role text not null check (role in ('student', 'partner')),
+  role text not null check (role in ('student', 'partner', 'campus')),
   name text not null,
   email text not null,
   prodi text,
   business_name text,
   created_at timestamptz not null default now()
 );
+
+-- 1b) Migrasi constraint role (idempotent untuk DB yang sudah ada).
+--     Wajib dijalankan agar role 'campus' diizinkan pada database lama.
+alter table public.users drop constraint if exists users_role_check;
+alter table public.users
+  add constraint users_role_check
+  check (role in ('student', 'partner', 'campus'));
+
 
 -- 2) Tabel projects
 create table if not exists public.projects (
@@ -75,14 +84,19 @@ set search_path = public
 as $$
 begin
   insert into public.users (id, role, name, email, prodi, business_name)
-  values (
+  with campus_check as (
+    select lower(new.email) like '%@idb-bali.ac.id' as verified
+  )
+  select
     new.id,
-    coalesce(new.raw_user_meta_data->>'role', 'student'),
+    case
+      when (select verified from campus_check) then 'campus'
+      else coalesce(new.raw_user_meta_data->>'role', 'student')
+    end,
     coalesce(new.raw_user_meta_data->>'name', ''),
     new.email,
     new.raw_user_meta_data->>'prodi',
-    new.raw_user_meta_data->>'business_name'
-  );
+    new.raw_user_meta_data->>'business_name';
   return new;
 end;
 $$;
@@ -135,7 +149,9 @@ create policy "users_update_own"
 
 
 -- projects -------------------------------------------------------------------
--- Semua authenticated boleh baca listing proyek
+-- Semua authenticated boleh baca listing proyek.
+-- Kampus tetap dianggap authenticated, sehingga dashboard monitoring bisa
+-- membaca semua proyek lintas mitra tanpa policy khusus tambahan.
 drop policy if exists "projects_select_authenticated" on public.projects;
 create policy "projects_select_authenticated"
   on public.projects for select
@@ -171,6 +187,7 @@ create policy "applications_select_own_or_partner"
   on public.applications for select
   using (
     student_id = auth.uid()
+    or public.current_user_role() = 'campus'
     or exists (
       select 1 from public.projects p
       where p.id = project_id and p.partner_id = auth.uid()
@@ -210,7 +227,8 @@ create policy "applications_delete_partner"
 
 
 -- ratings ---------------------------------------------------------------------
--- Semua authenticated boleh baca rating
+-- Semua authenticated boleh baca rating.
+-- Kampus tetap dianggap authenticated sehingga bisa dipakai untuk monitoring.
 drop policy if exists "ratings_select_authenticated" on public.ratings;
 create policy "ratings_select_authenticated"
   on public.ratings for select
@@ -226,7 +244,7 @@ create policy "ratings_insert_own"
 -- =============================================================================
 -- MILESTONE 4: Storage bucket "portfolios" + policies
 -- Jalankan berulang: aman (idempotent).
--- Bucket publik agar mahasiswa bisa lacens URL portofolio langsung dari browser.
+-- Bucket publik agar mahasiswa bisa mengakses URL portofolio langsung dari browser.
 -- =============================================================================
 
 -- 9) Bucket storage untuk file portofolio lamaran
@@ -234,7 +252,7 @@ insert into storage.buckets (id, name, public)
 values ('portfolios', 'portfolios', true)
 on conflict (id) do nothing;
 
--- Upload: cualquier authenticated user boleh upload ke bucket portfolios
+-- Upload: semua pengguna authenticated boleh upload ke bucket portfolios
 drop policy if exists "portfolio_files_insert" on storage.objects;
 create policy "portfolio_files_insert"
   on storage.objects for insert

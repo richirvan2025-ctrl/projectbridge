@@ -10,6 +10,7 @@
 --   Mahasiswa : dewa@student.id       (DKV)
 --   Mahasiswa : ayu@student.id        (Bisnis Digital)
 --   Mahasiswa : gita@student.id       (Desain Interior)
+--   Kampus    : kampus@idb-bali.ac.id (Admin Kampus IDB Bali)
 -- =============================================================================
 
 -- 1) Akun mitra (insert ke auth.users; trigger handle_new_user() otomatis
@@ -72,6 +73,27 @@ where not exists (
   where a.id = u.id or a.email = u.email
 );
 
+-- 2b) Akun kampus (role otomatis 'campus' via trigger karena domain email;
+--      JANGAN daftar lewat form signup publik — langsung tunjuk URL /login)
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, last_sign_in_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+)
+select
+  '00000000-0000-0000-0000-000000000000',
+  '00000000-0000-0000-0000-000000000001'::uuid,
+  'authenticated', 'authenticated',
+  'kampus@idb-bali.ac.id', crypt('demo1234', gen_salt('bf')), now(), now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"role":"campus","name":"Admin Kampus IDB Bali"}'::jsonb,
+  now(), now()
+where not exists (
+  select 1 from auth.users a
+  where a.id = '00000000-0000-0000-0000-000000000001'::uuid
+     or a.email = 'kampus@idb-bali.ac.id'
+);
+
 -- 3) Identitas email (diperlukan login email+password pada versi Supabase baru)
 insert into auth.identities (
   id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
@@ -83,7 +105,8 @@ select
 from auth.users a
 where a.email in (
   'mitra@warungwayan.id', 'mitra@studiobatik.id',
-  'dewa@student.id', 'ayu@student.id', 'gita@student.id'
+  'dewa@student.id', 'ayu@student.id', 'gita@student.id',
+  'kampus@idb-bali.ac.id'
 )
   and not exists (
     select 1 from auth.identities i
@@ -105,7 +128,8 @@ select
 from auth.users a
 where a.email in (
   'mitra@warungwayan.id', 'mitra@studiobatik.id',
-  'dewa@student.id', 'ayu@student.id', 'gita@student.id'
+  'dewa@student.id', 'ayu@student.id', 'gita@student.id',
+  'kampus@idb-bali.ac.id'
 )
   and not exists (
     select 1 from public.users u where u.id = a.id or u.email = a.email

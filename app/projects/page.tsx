@@ -125,7 +125,7 @@ export default async function ProjectsPage({
             href="/projects"
             className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            Sesip filter
+            Hapus filter
           </Link>
         )}
       </form>
