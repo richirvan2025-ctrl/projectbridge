@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import {
+  IconAcademicCap,
+  IconBanknotes,
+  IconCalendar,
+  IconCheckCircle,
+  IconInfo,
+  IconTrophy,
+} from "@/components/icons";
 
 export const metadata = { title: "Dashboard Mahasiswa — ProjectBridge" };
 
@@ -77,28 +85,34 @@ export default async function StudentPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
-      <header className="rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500 p-10 text-white shadow-xl">
-        <p className="text-sm font-medium text-white/80">Dashboard Mahasiswa</p>
-        <h1 className="mt-2 text-3xl font-extrabold md:text-4xl">
-          Halo, {profile?.name ?? "Mahasiswa"} 🎓
-        </h1>
-        <p className="mt-2 text-white/90">
-          {prodi
-            ? `Proyek terbuka untuk ${prodi}:`
-            : "Cari proyek riil yang sesuai dengan prodi Anda."}
-        </p>
+      <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500 p-8 text-white shadow-xl md:p-10">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-inset ring-white/30">
+            <IconAcademicCap className="h-3.5 w-3.5" />
+            Dashboard Mahasiswa
+          </span>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight md:text-4xl">
+            Halo, {profile?.name ?? "Mahasiswa"}
+          </h1>
+          <p className="mt-2 max-w-2xl text-white/90">
+            {prodi
+              ? `Proyek terbuka untuk ${prodi}:`
+              : "Cari proyek riil yang sesuai dengan prodi Anda."}
+          </p>
+        </div>
       </header>
 
       <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-xl font-bold text-slate-900">
+          <h2 className="text-xl font-bold tracking-tight text-slate-900">
             Proyek cocok untuk Anda
           </h2>
           <Link
             href={
               prodi ? `/projects?prodi=${encodeURIComponent(prodi)}` : "/projects"
             }
-            className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
           >
             Lihat semua proyek →
           </Link>
@@ -109,11 +123,11 @@ export default async function StudentPage() {
             {projects.map((p) => (
               <li
                 key={p.id}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
               >
                 <Link
                   href={`/projects/${p.id}`}
-                  className="text-lg font-bold text-slate-900 hover:text-indigo-700"
+                  className="text-lg font-bold tracking-tight text-slate-900 hover:text-indigo-700"
                 >
                   {p.title}
                 </Link>
@@ -121,22 +135,26 @@ export default async function StudentPage() {
                   {p.description}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                  <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 font-medium text-indigo-700">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-2.5 py-1 font-semibold text-indigo-700">
+                    <IconAcademicCap className="h-3.5 w-3.5" />
                     {p.prodi_target}
                   </span>
                   {p.sks_eligible && (
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 font-medium text-emerald-700">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 font-semibold text-emerald-700">
+                      <IconCheckCircle className="h-3.5 w-3.5" />
                       Bisa SKS
                     </span>
                   )}
                   {p.compensation && (
-                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-slate-600">
-                      💰 {p.compensation}
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">
+                      <IconBanknotes className="h-3.5 w-3.5" />
+                      {p.compensation}
                     </span>
                   )}
                   {p.deadline && (
-                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-slate-600">
-                      🗓️ Deadline: {formatDeadline(p.deadline)}
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">
+                      <IconCalendar className="h-3.5 w-3.5" />
+                      Deadline: {formatDeadline(p.deadline)}
                     </span>
                   )}
                 </div>
@@ -144,11 +162,11 @@ export default async function StudentPage() {
             ))}
           </ul>
         ) : (
-          <section className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
+          <section className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
             <p className="font-semibold text-slate-700">
               Belum ada proyek terbuka untuk prodi Anda
             </p>
-            <p className="mt-1 text-sm">
+            <p className="mt-1 text-sm text-slate-500">
               Cek daftar lengkap semua proyek — mitra posting baru tiap minggu.
             </p>
           </section>
@@ -157,8 +175,9 @@ export default async function StudentPage() {
 
       {doneProjects.length > 0 && (
         <section className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-emerald-900">
-            Proyek selesai — sertifikat siap 🏅
+          <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-emerald-900">
+            <IconTrophy className="h-5 w-5 text-emerald-600" />
+            Proyek selesai — sertifikat siap
           </h2>
           <p className="mt-1 text-sm text-emerald-700">
             Beri rating ke mitra dan ambil sertifikat digital Anda.
@@ -167,15 +186,15 @@ export default async function StudentPage() {
             {doneProjects.map((p) => (
               <li
                 key={p.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4 shadow-sm"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
               >
-                <div>
+                <div className="min-w-0">
                   <p className="font-semibold text-slate-900">{p.title}</p>
                   <p className="text-xs text-slate-500">{p.prodi_target}</p>
                 </div>
                 <Link
                   href={`/projects/${p.id}`}
-                  className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                  className="shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 active:scale-[0.98]"
                 >
                   Lihat sertifikat &amp; rating →
                 </Link>
@@ -185,9 +204,12 @@ export default async function StudentPage() {
         </section>
       )}
 
-      <p className="mt-6 text-sm text-slate-500">
-        🤝 Buka detail proyek untuk melihat deskripsi lengkap dan mengirim
-        lamaran dengan portofolio (maks 3 file).
+      <p className="mt-6 flex items-start gap-2 text-sm text-slate-500">
+        <IconInfo className="mt-0.5 h-4 w-4 shrink-0" />
+        <span>
+          Buka detail proyek untuk melihat deskripsi lengkap dan mengirim
+          lamaran dengan portofolio (maks 3 file).
+        </span>
       </p>
     </main>
   );

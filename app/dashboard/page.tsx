@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import {
+  IconCheckCircle,
+  IconClock,
+  IconMegaphone,
+  IconSparkles,
+  IconStorefront,
+  IconUsers,
+} from "@/components/icons";
 
 export const metadata = { title: "Dashboard Mitra — ProjectBridge" };
 
@@ -76,55 +84,80 @@ export default async function DashboardPage({
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
-      <header className="rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500 p-10 text-white shadow-xl">
-        <p className="text-sm font-medium text-white/80">Dashboard Mitra</p>
-        <h1 className="mt-2 text-3xl font-extrabold md:text-4xl">
-          Halo, {profile?.name ?? "Mitra"} 👋
-        </h1>
-        <p className="mt-2 text-white/90">
-          {profile?.business_name
-            ? `Usaha: ${profile.business_name}`
-            : "Kelola proyek dan pelamar Anda di sini."}
-        </p>
+      <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500 p-8 text-white shadow-xl md:p-10">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-inset ring-white/30">
+            <IconStorefront className="h-3.5 w-3.5" />
+            Dashboard Mitra
+          </span>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight md:text-4xl">
+            Halo, {profile?.name ?? "Mitra"}
+          </h1>
+          <p className="mt-2 text-white/90">
+            {profile?.business_name
+              ? `Usaha: ${profile.business_name}`
+              : "Kelola proyek dan pelamar Anda di sini."}
+          </p>
+        </div>
       </header>
 
       {searchParams?.created === "1" && (
         <div
           role="status"
-          className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
+          className="mt-6 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
         >
-          Proyek berhasil dipublikasikan 🎉
+          <IconSparkles className="h-4 w-4 shrink-0" />
+          Proyek berhasil dipublikasikan
         </div>
       )}
 
       <section className="mt-8 grid gap-5 md:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Proyek terbuka</p>
-          <p className="mt-2 text-3xl font-extrabold text-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-slate-500">Proyek terbuka</p>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
+              <IconMegaphone className="h-5 w-5" />
+            </span>
+          </div>
+          <p className="mt-3 text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
             {countOpen}
           </p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Berjalan</p>
-          <p className="mt-2 text-3xl font-extrabold text-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-slate-500">Berjalan</p>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 text-amber-600">
+              <IconClock className="h-5 w-5" />
+            </span>
+          </div>
+          <p className="mt-3 text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
             {countInProgress}
           </p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Selesai</p>
-          <p className="mt-2 text-3xl font-extrabold text-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-slate-500">Selesai</p>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-slate-100 text-slate-500">
+              <IconCheckCircle className="h-5 w-5" />
+            </span>
+          </div>
+          <p className="mt-3 text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
             {countCompleted}
           </p>
         </div>
       </section>
 
       <section className="mt-8 flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-bold text-slate-900">
-          Proyek Anda ({projects.length})
+        <h2 className="text-xl font-bold tracking-tight text-slate-900">
+          Proyek Anda{" "}
+          <span className="tabular-nums text-slate-400">
+            ({projects.length})
+          </span>
         </h2>
         <Link
           href="/dashboard/new"
-          className="rounded-full bg-indigo-600 px-5 py-2.5 font-semibold text-white shadow-sm hover:bg-indigo-700"
+          className="rounded-full bg-indigo-600 px-5 py-2.5 font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 active:scale-[0.98]"
         >
           + Posting Proyek
         </Link>
@@ -137,17 +170,17 @@ export default async function DashboardPage({
             return (
               <li
                 key={p.id}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <Link
                     href={`/dashboard/projects/${p.id}`}
-                    className="text-lg font-bold text-slate-900 hover:text-indigo-700"
+                    className="text-lg font-bold tracking-tight text-slate-900 hover:text-indigo-700"
                   >
                     {p.title}
                   </Link>
                   <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${badge.className}`}
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badge.className}`}
                   >
                     {badge.label}
                   </span>
@@ -171,18 +204,22 @@ export default async function DashboardPage({
                 </p>
                 <Link
                   href={`/dashboard/projects/${p.id}`}
-                  className="mt-3 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700"
                 >
-                  👥 {applicationCounts[p.id] ?? 0} pelamar — tinjau lamaran →
+                  <IconUsers className="h-4 w-4" />
+                  <span className="tabular-nums">
+                    {applicationCounts[p.id] ?? 0}
+                  </span>{" "}
+                  pelamar — tinjau lamaran →
                 </Link>
               </li>
             );
           })}
         </ul>
       ) : (
-        <section className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
+        <section className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
           <p className="font-semibold text-slate-700">Belum ada proyek</p>
-          <p className="mt-1 text-sm">
+          <p className="mt-1 text-sm text-slate-500">
             Posting proyek pertama Anda agar tampil di listing mahasiswa.
           </p>
         </section>

@@ -2,6 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PRODI_OPTIONS } from "@/app/(auth)/prodi-options";
+import {
+  IconAcademicCap,
+  IconClipboard,
+  IconLibrary,
+  IconStar,
+  IconStorefront,
+} from "@/components/icons";
 import { PrintButton } from "./print-button";
 
 export const metadata = { title: "Dashboard Kampus — ProjectBridge" };
@@ -194,7 +201,8 @@ export default async function CampusPage({
         <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-white/10 blur-3xl" />
         <div className="relative">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-inset ring-white/30">
-            🏫 Dashboard Kampus
+            <IconLibrary className="h-3.5 w-3.5" />
+            Dashboard Kampus
           </span>
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight md:text-4xl">
             Halo, {profile?.name ?? "Admin Kampus"}
@@ -221,8 +229,8 @@ export default async function CampusPage({
             <p className="text-sm font-medium text-slate-500">
               Mahasiswa terdaftar
             </p>
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-50 text-base">
-              🎓
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+              <IconAcademicCap className="h-5 w-5" />
             </span>
           </div>
           <p className="mt-3 text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
@@ -237,8 +245,8 @@ export default async function CampusPage({
             <p className="text-sm font-medium text-slate-500">
               Proyek ditawarkan
             </p>
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-base">
-              📋
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-600">
+              <IconClipboard className="h-5 w-5" />
             </span>
           </div>
           <p className="mt-3 text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
@@ -252,8 +260,8 @@ export default async function CampusPage({
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-slate-500">Mitra</p>
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 text-base">
-              🏪
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 text-amber-600">
+              <IconStorefront className="h-5 w-5" />
             </span>
           </div>
           <p className="mt-3 text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
@@ -268,13 +276,13 @@ export default async function CampusPage({
             <p className="text-sm font-medium text-slate-500">
               Rata-rata rating
             </p>
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-base">
-              ⭐
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
+              <IconStar className="h-5 w-5" />
             </span>
           </div>
-          <p className="mt-3 text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
+          <p className="mt-3 flex items-center gap-1 text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
             {ratings.length > 0 ? avgRating.toFixed(1) : "—"}
-            <span className="text-lg text-amber-400"> ★</span>
+            <IconStar className="h-5 w-5 text-amber-400" />
           </p>
           <p className="mt-1 text-xs text-slate-400">
             {ratings.length} rating · {sksEligible} proyek bisa dikonversi SKS
