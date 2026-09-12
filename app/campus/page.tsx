@@ -16,6 +16,7 @@ export const metadata = { title: "Dashboard Kampus — ProjectBridge" };
 type ProjectRow = {
   id: string;
   title: string;
+  slug: string;
   status: string;
   prodi_target: string;
   sks_eligible: boolean;
@@ -108,7 +109,7 @@ export default async function CampusPage({
     supabase
       .from("projects")
       .select(
-        "id, title, status, prodi_target, sks_eligible, created_at, partner_id"
+        "id, title, slug, status, prodi_target, sks_eligible, created_at, partner_id"
       )
       .order("created_at", { ascending: false }),
     supabase.from("applications").select("id, status, student_id, project_id, created_at"),
@@ -497,7 +498,7 @@ export default async function CampusPage({
                 >
                   <div className="min-w-0">
                     <Link
-                      href={`/projects/${p.id}`}
+                      href={`/projects/${p.slug}`}
                       className="font-semibold text-slate-900 hover:text-indigo-700"
                     >
                       {p.title}

@@ -276,3 +276,51 @@ create policy "portfolio_files_select"
 --     adalah dua baris berbeda (from_user_id berbeda).
 create unique index if not exists "ratings_project_from_unique"
   on public.ratings (project_id, from_user_id);
+
+-- =============================================================================
+-- MILESTONE 10: Slug URL proyek
+-- Jalankan berulang: aman (idempotent).
+--
+-- slug = alias URL yang enak dibaca, mis. /projects/redesign-katalog-kopi.
+-- Primary key TETAP uuid (tidak enumerable); slug hanya untuk routing/tampilan.
+-- Halaman detail menerima keduanya, jadi tautan uuid lama tetap hidup.
+-- =============================================================================
+
+-- 11) Kolom slug (nullable — baris lama di-backfill di bawah, unique index
+--     memperbolehkan banyak NULL).
+alter table public.projects add column if not exists slug text;
+
+-- Backfill untuk baris yang belum punya slug: turunkan dari judul, dan
+-- tambahkan -2, -3, ... bila dua judul menghasilkan slug yang sama.
+with base as (
+  select
+    id,
+    created_at,
+    coalesce(
+      nullif(
+        trim(both '-' from regexp_replace(lower(title), '[^a-z0-9]+', '-', 'g')),
+        ''
+      ),
+      'proyek'
+    ) as base_slug
+  from public.projects
+  where slug is null
+),
+numbered as (
+  select
+    id,
+    base_slug,
+    row_number() over (partition by base_slug order by created_at, id) as rn
+  from base
+)
+update public.projects p
+set slug = case
+  when n.rn = 1 then n.base_slug
+  else n.base_slug || '-' || n.rn
+end
+from numbered n
+where p.id = n.id;
+
+-- Unique index dibuat SETELAH backfill agar tidak menabrak baris lama.
+create unique index if not exists "projects_slug_unique"
+  on public.projects (slug);

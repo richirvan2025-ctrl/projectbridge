@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { looksLikeUuid } from "@/lib/slug";
 import { ApplyForm } from "./apply-form";
 import { RatingForm } from "../rating-form";
 import { CertificateCard } from "../certificate-card";
@@ -33,6 +34,26 @@ function getPartnerBusinessName(partner: unknown): string | null {
   return typeof business === "string" ? business : null;
 }
 
+type SupabaseServerClient = ReturnType<typeof createClient>;
+
+/**
+ * Ambil proyek dari segmen URL: slug (bentuk baru) atau uuid (tautan lama).
+ * Keduanya didukung agar tautan uuid yang sudah beredar tetap hidup.
+ */
+async function findProject(supabase: SupabaseServerClient, segment: string) {
+  const { data } = await supabase
+    .from("projects")
+    .select(
+      `id, partner_id, title, slug, description, prodi_target, compensation,
+       deadline, sks_eligible, status, created_at,
+       partner:users(name, business_name)`
+    )
+    .eq(looksLikeUuid(segment) ? "id" : "slug", segment)
+    .maybeSingle();
+
+  return data;
+}
+
 export default async function ProjectDetailPage({
   params,
   searchParams,
@@ -49,15 +70,7 @@ export default async function ProjectDetailPage({
     redirect("/login?error=Silakan masuk terlebih dahulu.");
   }
 
-  const { data: project } = await supabase
-    .from("projects")
-    .select(
-      `id, partner_id, title, description, prodi_target, compensation,
-       deadline, sks_eligible, status, created_at,
-       partner:users(name, business_name)`
-    )
-    .eq("id", params.id)
-    .maybeSingle();
+  const project = await findProject(supabase, params.id);
 
   if (!project) {
     notFound();
@@ -81,7 +94,7 @@ export default async function ProjectDetailPage({
     const { data: application } = await supabase
       .from("applications")
       .select("id, status")
-      .eq("project_id", params.id)
+      .eq("project_id", project.id)
       .eq("student_id", user.id)
       .maybeSingle();
     hasApplied = !!application;
@@ -98,14 +111,14 @@ export default async function ProjectDetailPage({
     const { data: sent } = await supabase
       .from("ratings")
       .select("stars, comment")
-      .eq("project_id", params.id)
+      .eq("project_id", project.id)
       .eq("from_user_id", user.id)
       .maybeSingle();
     myRating = sent;
     const { data: received } = await supabase
       .from("ratings")
       .select("stars, comment")
-      .eq("project_id", params.id)
+      .eq("project_id", project.id)
       .eq("from_user_id", project.partner_id)
       .eq("to_user_id", user.id)
       .maybeSingle();

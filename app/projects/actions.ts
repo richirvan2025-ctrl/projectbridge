@@ -4,8 +4,58 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PRODI_OPTIONS } from "@/app/(auth)/prodi-options";
+import { slugify } from "@/lib/slug";
 
 type ProjectActionResult = { error: string } | undefined;
+
+type SupabaseServerClient = ReturnType<typeof createClient>;
+
+/**
+ * Cari slug yang belum terpakai untuk judul proyek: "judul-proyek", lalu
+ * "judul-proyek-2", "judul-proyek-3", dst. Unique index projects_slug_unique
+ * tetap benteng terakhir bila dua mitra menyimpan pada saat yang sama.
+ */
+async function reserveSlug(
+  supabase: SupabaseServerClient,
+  title: string
+): Promise<string> {
+  const base = slugify(title);
+  // slugify() hanya menghasilkan a-z, 0-9, dan "-", jadi aman dipakai sebagai
+  // pola LIKE tanpa karakter wildcard.
+  const { data } = await supabase
+    .from("projects")
+    .select("slug")
+    .ilike("slug", `${base}%`);
+
+  const taken = new Set(
+    (data ?? [])
+      .map((row) => row.slug)
+      .filter((s): s is string => typeof s === "string")
+  );
+
+  if (!taken.has(base)) return base;
+
+  let n = 2;
+  while (taken.has(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
+}
+
+/**
+ * Path publik proyek — slug bila ada, uuid bila baris belum di-backfill.
+ * Dipakai untuk revalidatePath agar cache halaman yang benar ikut dibuang.
+ */
+async function publicProjectPath(
+  supabase: SupabaseServerClient,
+  projectId: string
+): Promise<string> {
+  const { data } = await supabase
+    .from("projects")
+    .select("slug")
+    .eq("id", projectId)
+    .maybeSingle();
+
+  return `/projects/${data?.slug ?? projectId}`;
+}
 
 /**
  * Milestone 3 — Mitra post proyek baru.
@@ -62,9 +112,13 @@ export async function createProjectAction(
     return { error: "Hanya mitra yang dapat membuat proyek." };
   }
 
+  // Slug URL dari judul; diberi akhiran -2, -3, ... bila sudah terpakai.
+  const slug = await reserveSlug(supabase, title);
+
   const { error } = await supabase.from("projects").insert({
     partner_id: user.id,
     title,
+    slug,
     description,
     prodi_target: prodiTarget,
     compensation: compensation || null,
@@ -132,7 +186,7 @@ export async function applyProjectAction(
   // Proyek harus masih terbuka
   const { data: project } = await supabase
     .from("projects")
-    .select("id, status")
+    .select("id, slug, status")
     .eq("id", projectId)
     .single();
 
@@ -201,9 +255,10 @@ export async function applyProjectAction(
     return { error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  const publicPath = `/projects/${project.slug ?? projectId}`;
+  revalidatePath(publicPath);
   revalidatePath("/projects");
-  redirect(`/projects/${projectId}?applied=1`);
+  redirect(`${publicPath}?applied=1`);
 }
 
 /**
@@ -250,7 +305,7 @@ export async function updateApplicationStatusAction(
   }
 
   revalidatePath(`/dashboard/projects/${application.project_id}`);
-  revalidatePath(`/projects/${application.project_id}`);
+  revalidatePath(await publicProjectPath(supabase, application.project_id));
   redirect(`/dashboard/projects/${application.project_id}?updated=1`);
 }
 
@@ -294,6 +349,7 @@ export async function updateProjectStatusAction(
   revalidatePath(`/dashboard/projects/${projectId}`);
   revalidatePath(`/dashboard`);
   revalidatePath(`/projects`);
+  revalidatePath(await publicProjectPath(supabase, projectId));
   redirect(`/dashboard/projects/${projectId}?updated=1`);
 }
 
@@ -333,7 +389,7 @@ export async function submitRatingAction(
   // Proyek harus sudah selesai
   const { data: project } = await supabase
     .from("projects")
-    .select("id, status, partner_id")
+    .select("id, slug, status, partner_id")
     .eq("id", projectId)
     .single();
 
@@ -417,11 +473,12 @@ export async function submitRatingAction(
     return { error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  const publicPath = `/projects/${project.slug ?? projectId}`;
+  revalidatePath(publicPath);
   revalidatePath(`/dashboard/projects/${projectId}`);
   redirect(
     profile.role === "partner"
       ? `/dashboard/projects/${projectId}?rated=1`
-      : `/projects/${projectId}?rated=1`
+      : `${publicPath}?rated=1`
   );
 }

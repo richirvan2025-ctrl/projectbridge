@@ -182,11 +182,11 @@ with seed_partner_map (fixed_id, real_id) as (
     ('11111111-1111-1111-1111-111111111102'::uuid, (select id from public.users where email = 'mitra@studiobatik.id'))
 )
 insert into public.projects (
-  id, partner_id, title, description, prodi_target,
+  id, partner_id, title, slug, description, prodi_target,
   compensation, deadline, sks_eligible, status, created_at
 )
 select
-  p.id, pm.real_id, p.title, p.description, p.prodi_target,
+  p.id, pm.real_id, p.title, p.slug, p.description, p.prodi_target,
   p.compensation, p.deadline::date, p.sks, p.status,
   now() - (p.days || ' days')::interval
 from (values
@@ -194,6 +194,7 @@ from (values
     '33333333-3333-3333-3333-333333333301'::uuid,
     '11111111-1111-1111-1111-111111111101'::uuid,
     'Redesign Katalog Produk Warung Kopi Wayan',
+    'redesign-katalog-produk-warung-kopi-wayan',
     'Katalog produk kami (kopi bubuk, cold brew, pastry) masih berupa daftar
 teks sederhana. Butuh redesign agar layak dibawa ke ritel dan pameran UMKM
 Bali: 8–10 halaman, foto produk kami disediakan, gaya hangat dan lokal.',
@@ -204,6 +205,7 @@ Bali: 8–10 halaman, foto produk kami disediakan, gaya hangat dan lokal.',
     '33333333-3333-3333-3333-333333333302'::uuid,
     '11111111-1111-1111-1111-111111111102'::uuid,
     'Konten Media Sosial 30 Hari untuk Studio Batik Sanur',
+    'konten-media-sosial-30-hari-studio-batik-sanur',
     'Butuh paket konten 30 hari (caption + desain carousel + reels sederhana)
 untuk Instagram dan TikTok studio batik. Brief brand kami lengkap; moodboard
 bisa didiskusikan tiap pekan.',
@@ -214,6 +216,7 @@ bisa didiskusikan tiap pekan.',
     '33333333-3333-3333-3333-333333333303'::uuid,
     '11111111-1111-1111-1111-111111111102'::uuid,
     'Visualisasi 3D Booth Pameran Batik',
+    'visualisasi-3d-booth-pameran-batik',
     'Booth 3x3 meter untuk pameran UMKM di Denpasar. Butuh visualisasi 3D
 (dari 2 sudut) + denah sederhana agar tim bisa menyiapkan material booth
 sebelum pameran bulan depan.',
@@ -224,17 +227,38 @@ sebelum pameran bulan depan.',
     '33333333-3333-3333-3333-333333333304'::uuid,
     '11111111-1111-1111-1111-111111111101'::uuid,
     'Logo & Kemasan Kopi Bubuk “Subak”',
+    'logo-kemasan-kopi-bubuk-subak',
     'Produk baru kami: kopi bubuk “Subak”. Butuh logo + desain kemasan
 (stand-up pouch 200g) siap cetak, termasuk varian warna untuk 3 tingkat
 roasting. Proyek ini sudah selesai dikerjakan.',
     'DKV (Desain Komunikasi Visual)',
     'Rp 1.200.000', '2026-08-15', true, 'completed', 40
   )
-) as p(id, partner_id, title, description, prodi_target, compensation, deadline, sks, status, days)
+) as p(id, partner_id, title, slug, description, prodi_target, compensation, deadline, sks, status, days)
 join seed_partner_map pm on pm.fixed_id = p.partner_id
 where not exists (
   select 1 from public.projects x where x.id = p.id
 );
+
+-- 4b) Samakan slug proyek demo dengan nilai kanonik.
+--     Diperlukan untuk database yang sudah menjalankan schema.sql sebelum
+--     Milestone 10: backfill di sana menurunkan slug dari judul, sehingga
+--     hasilnya bisa berbeda dari slug rapi yang dipakai dokumentasi/demo.
+--     Guard "not exists" mencegah bentrok dengan unique index.
+update public.projects p
+set slug = v.slug
+from (values
+  ('33333333-3333-3333-3333-333333333301'::uuid, 'redesign-katalog-produk-warung-kopi-wayan'),
+  ('33333333-3333-3333-3333-333333333302'::uuid, 'konten-media-sosial-30-hari-studio-batik-sanur'),
+  ('33333333-3333-3333-3333-333333333303'::uuid, 'visualisasi-3d-booth-pameran-batik'),
+  ('33333333-3333-3333-3333-333333333304'::uuid, 'logo-kemasan-kopi-bubuk-subak')
+) as v(id, slug)
+where p.id = v.id
+  and p.slug is distinct from v.slug
+  and not exists (
+    select 1 from public.projects x
+    where x.slug = v.slug and x.id <> v.id
+  );
 
 -- 5) Lamaran (contoh semua status: masuk, diterima, ditolak)
 --    UUID mahasiswa tetap (2222...) dipetakan ke ID yang ADA via email.

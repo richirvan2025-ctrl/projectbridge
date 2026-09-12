@@ -97,6 +97,23 @@ Lihat `ProjectBridge_PRD.md` untuk PRD lengkap.
 - [x] Akun demo kampus `kampus@idb-bali.ac.id` (sandi `demo1234`) di `seed.sql`
 - [ ] Jalankan ulang `schema.sql` (migrasi constraint role) + uji `/campus`
 
+### Milestone 10 — Slug URL proyek ✅
+
+- [x] Kolom `slug` di tabel `projects` + unique index `projects_slug_unique`
+- [x] Backfill otomatis untuk proyek lama (diturunkan dari judul; `-2`, `-3`, … bila bentrok)
+- [x] `lib/slug.ts` — `slugify()` (ASCII, huruf kecil, maks 60 karakter) + `looksLikeUuid()`
+- [x] Slug dibuat saat mitra memposting proyek; akhiran angka bila judul sudah terpakai
+- [x] URL publik jadi `/projects/redesign-katalog-produk-warung-kopi-wayan`
+- [x] Halaman detail menerima **slug atau uuid** — tautan lama tetap hidup
+- [x] Dashboard mitra tetap memakai uuid (internal, dilindungi role)
+- [ ] Jalankan ulang `schema.sql` lalu `seed.sql`, uji buka proyek lewat slug
+
+> **Penting (migrasi)**: bila database sudah dibuat sebelum Milestone 10,
+> jalankan ulang `supabase/schema.sql` — bagian **11** menambah kolom `slug`,
+> mengisinya untuk proyek lama, lalu membuat unique index. Setelah itu jalankan
+> `supabase/seed.sql` (bagian **4b**) agar slug proyek demo memakai nilai
+> kanonik yang dirujuk dokumentasi. Aman dijalankan berulang (idempotent).
+
 > **Penting (migrasi)**: bila database sudah dibuat sebelum Milestone 9,
 > jalankan ulang `supabase/schema.sql` — bagian **1b** men-drop lalu menambah
 > ulang constraint `users_role_check` agar role `campus` diizinkan. Aman
@@ -260,7 +277,7 @@ app/                          # App Router
     actions.ts                # createProjectAction + applyProjectAction (server action)
     new-project-form.tsx      # form posting proyek (client)
     page.tsx                  # /projects — listing + filter
-    [id]/page.tsx             # /projects/[id] — detail + lamaran (Milestone 4)
+    [id]/page.tsx             # /projects/[slug] — detail + lamaran (M4; terima slug/uuid)
     [id]/apply-form.tsx       # form lamaran (client: alasan + upload portofolio)
     rating-form.tsx           # form rating bintang 1–5 + komentar (Milestone 6)
     certificate-card.tsx      # kartu sertifikat digital (jam kerja manual)
@@ -272,6 +289,7 @@ app/                          # App Router
   page.tsx                    # landing page
 components/
   site-header.tsx             # header global (logo, login/dashboard/sign-out)
+lib/slug.ts                   # slugify() untuk URL proyek + deteksi uuid (M10)
 lib/supabase/
   client.ts                   # browser client
   server.ts                   # server client (cookies)

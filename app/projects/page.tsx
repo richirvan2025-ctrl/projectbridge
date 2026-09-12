@@ -76,7 +76,7 @@ export default async function ProjectsPage({
   let query = supabase
     .from("projects")
     .select(
-      `id, title, description, prodi_target, compensation, deadline,
+      `id, title, slug, description, prodi_target, compensation, deadline,
        sks_eligible, status, created_at, partner:users(name, business_name)`
     )
     .eq("status", "open");
@@ -188,7 +188,7 @@ export default async function ProjectsPage({
             return (
               <li key={p.id}>
                 <Link
-                  href={`/projects/${p.id}`}
+                  href={`/projects/${p.slug}`}
                   className="group flex h-full cursor-pointer flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:border-indigo-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                 >
                   <div className="flex items-start justify-between gap-3">

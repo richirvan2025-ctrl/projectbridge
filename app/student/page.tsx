@@ -12,6 +12,21 @@ import {
 
 export const metadata = { title: "Dashboard Mahasiswa — ProjectBridge" };
 
+// Proyek yang lamarannya sudah diterima tapi belum ditandai selesai.
+// Label ditulis dari sudut pandang mahasiswa, bukan status internal proyek.
+const ACTIVE_LABEL: Record<string, { label: string; className: string }> = {
+  open: { label: "Diterima", className: "bg-emerald-100 text-emerald-700" },
+  in_progress: { label: "Berjalan", className: "bg-amber-100 text-amber-700" },
+};
+
+type LinkedProject = {
+  id: string;
+  title: string;
+  slug: string;
+  status: string;
+  prodi_target: string;
+};
+
 function formatDeadline(iso: string) {
   try {
     return new Date(iso).toLocaleDateString("id-ID", {
@@ -46,10 +61,38 @@ export default async function StudentPage() {
   }
 
   const prodi = profile?.prodi?.trim();
+
+  // Lamaran mahasiswa ini beserta proyeknya. Dipisah menjadi dua kelompok:
+  //   - diterima, proyek belum selesai  → "Lamaran Anda diterima"
+  //   - diterima, proyek sudah selesai  → "Proyek selesai — sertifikat siap"
+  // Tanpa kelompok pertama, mahasiswa yang diterima di proyek berjalan tidak
+  // melihat apa pun di dashboard-nya.
+  const { data: myApplications } = await supabase
+    .from("applications")
+    .select("status, project:projects(id, title, slug, status, prodi_target)")
+    .eq("student_id", user.id);
+
+  const acceptedProjects = (myApplications ?? [])
+    .filter((a) => a.status === "accepted")
+    .map((a) => {
+      const p = Array.isArray(a.project) ? a.project[0] : a.project;
+      return (p ?? null) as LinkedProject | null;
+    })
+    .filter((p): p is LinkedProject => p !== null);
+
+  const activeProjects = acceptedProjects.filter(
+    (p) => p.status === "open" || p.status === "in_progress"
+  );
+  const doneProjects = acceptedProjects.filter((p) => p.status === "completed");
+
+  // Proyek yang lamarannya sudah diterima tidak ditawarkan lagi sebagai
+  // "proyek cocok" — mahasiswa sudah terhubung dengan proyek itu.
+  const acceptedIds = acceptedProjects.map((p) => p.id);
+
   let query = supabase
     .from("projects")
     .select(
-      "id, title, description, prodi_target, compensation, deadline, sks_eligible"
+      "id, title, slug, description, prodi_target, compensation, deadline, sks_eligible"
     )
     .eq("status", "open");
 
@@ -57,31 +100,13 @@ export default async function StudentPage() {
   if (prodi) {
     query = query.eq("prodi_target", prodi);
   }
+  if (acceptedIds.length > 0) {
+    query = query.not("id", "in", `(${acceptedIds.join(",")})`);
+  }
 
   const { data: projects } = await query
     .order("created_at", { ascending: false })
     .limit(5);
-
-  // Milestone 6: proyek selesai yang lamarannya diterima → sertifikat siap
-  const { data: acceptedApps } = await supabase
-    .from("applications")
-    .select("id, project:projects(id, title, status, prodi_target)")
-    .eq("student_id", user.id)
-    .eq("status", "accepted");
-
-  const doneProjects = (acceptedApps ?? [])
-    .map((a) => {
-      const p = Array.isArray(a.project) ? a.project[0] : a.project;
-      return p as
-        | { id: string; title: string; status: string; prodi_target: string }
-        | null;
-    })
-    .filter(
-      (
-        p
-      ): p is { id: string; title: string; status: string; prodi_target: string } =>
-        p !== null && p.status === "completed"
-    );
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
@@ -126,7 +151,7 @@ export default async function StudentPage() {
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
               >
                 <Link
-                  href={`/projects/${p.id}`}
+                  href={`/projects/${p.slug}`}
                   className="text-lg font-bold tracking-tight text-slate-900 hover:text-indigo-700"
                 >
                   {p.title}
@@ -173,6 +198,48 @@ export default async function StudentPage() {
         )}
       </section>
 
+      {activeProjects.length > 0 && (
+        <section className="mt-8 rounded-2xl border border-indigo-200 bg-indigo-50 p-6 shadow-sm">
+          <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-indigo-900">
+            <IconCheckCircle className="h-5 w-5 text-indigo-600" />
+            Lamaran Anda diterima
+          </h2>
+          <p className="mt-1 text-sm text-indigo-700">
+            Anda terhubung dengan proyek ini. Sertifikat dan rating terbuka
+            setelah mitra menandai proyek selesai.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {activeProjects.map((p) => {
+              const badge = ACTIVE_LABEL[p.status] ?? ACTIVE_LABEL.open;
+              return (
+                <li
+                  key={p.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-900">{p.title}</p>
+                    <p className="text-xs text-slate-500">{p.prodi_target}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badge.className}`}
+                    >
+                      {badge.label}
+                    </span>
+                    <Link
+                      href={`/projects/${p.slug}`}
+                      className="rounded-full border border-indigo-300 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-50 active:scale-[0.98]"
+                    >
+                      Buka proyek →
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {doneProjects.length > 0 && (
         <section className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
           <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-emerald-900">
@@ -193,7 +260,7 @@ export default async function StudentPage() {
                   <p className="text-xs text-slate-500">{p.prodi_target}</p>
                 </div>
                 <Link
-                  href={`/projects/${p.id}`}
+                  href={`/projects/${p.slug}`}
                   className="shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 active:scale-[0.98]"
                 >
                   Lihat sertifikat &amp; rating →
